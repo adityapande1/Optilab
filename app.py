@@ -1,9 +1,9 @@
 import streamlit as st
-from analyze import run as run_analyze
-from trade import run as run_trade
-from home import run as run_home    
-from yello import run as run_yello
-from candlesticks import run as run_candlesticks    
+from app_analyze import run as run_analyze
+from app_trade import run as run_trade
+from app_home import run as run_home    
+from app_yello import run as run_yello
+from app_candlesticks import run as run_candlesticks    
 
 # --- Wide page setting filling complete window ---
 st.set_page_config(
