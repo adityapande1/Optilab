@@ -85,9 +85,10 @@ def main():
     ###########################################################################################
     original_py_file_path = os.path.join(optiverse_dir, 'Constants.py')
     this_dir_py_file_path = os.path.join(this_dir, 'Constants.py')
+    shutil.copy2(original_py_file_path, this_dir_py_file_path)
 
 
-    # Git
+    # Git commit and push changes only the above folders that were copied from optiverse
     os.system(f"git add {this_dir_py_file_path}")
     os.system("git commit -m 'Updated Constants.py'")
     os.system("git push")
