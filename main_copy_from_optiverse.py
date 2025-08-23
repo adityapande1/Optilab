@@ -16,6 +16,8 @@ def main():
     folders_copied = []
     for folder in folders_to_copy_from_optiverse:
         dest_folder = os.path.join(this_dir, 'optiverse_' + os.path.basename(folder))
+        if os.path.exists(dest_folder):
+            shutil.rmtree(dest_folder)  # Remove existing destination folder
         os.system(f"cp -r {folder} {dest_folder}")  # Copy and even rewrite if exists
         folders_copied.append(dest_folder)
 
@@ -28,7 +30,7 @@ def main():
     ########################################################################################
 
     ###########################################################################################
-    ### 2. Copy the last 10 backtest_results from the backtest folder and commit###
+    ### 2. Copy the last <num_backtests_to_copy> backtest_results from Optiverse and commit ###
     ###########################################################################################
     original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results')
     this_dir_backtest_folder = os.path.join(this_dir, 'optiverse_backtest_results')
@@ -56,8 +58,9 @@ def main():
     ###########################################################################################
 
 
+
     ###########################################################################################
-    ### 2. Add Logic here to update the database according to the optiverse database folder ###
+    ### 3. Add Logic here to update the database according to the optiverse database folder ###
     ###########################################################################################
 
     # TODO: Implement database update logic here

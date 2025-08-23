@@ -1,5 +1,5 @@
 import streamlit as st
-from app_analyze import run as run_analyze
+from app_backtest_results import run as run_backtest_results
 from app_trade import run as run_trade
 from app_home import run as run_home    
 from app_yello import run as run_yello
@@ -49,11 +49,11 @@ st.markdown(
 
 # --- Navigation buttons (side by side with small gap) ---
 state_names = ["Home", "Candlesticks", "Analyze Backtest Results", "Trade", "Yellow"]
-button_names = ["btn_home", "btn_candlesticks", "btn_analyze", "btn_trade", "btn_yellow"]
+button_names = ["btn_home", "btn_candlesticks", "btn_analyze_backtest_results", "btn_trade", "btn_yellow"]
 page_functions = {
     "Home": run_home,
     "Candlesticks": run_candlesticks,
-    "Analyze Backtest Results": run_analyze,
+    "Analyze Backtest Results": run_backtest_results,
     "Trade": run_trade,
     "Yellow": run_yello
 }
