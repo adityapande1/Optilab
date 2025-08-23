@@ -16,8 +16,8 @@ def main():
         dest_folder = os.path.join(this_dir, 'optiverse_' + os.path.basename(folder))
         os.system(f"cp -r {folder} {dest_folder}")  # Copy and even rewrite if exists
 
-    # Git commit and push changes
-    os.system("git add .")
+    # Git commit and push changes only the above folders
+    os.system("git add optiverse_connectors optiverse_utils")
     os.system("git commit -m 'Updated Optiverse folders'")
     os.system("git push")
     
