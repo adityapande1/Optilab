@@ -58,6 +58,8 @@ page_functions = {
     "Yellow": run_yello
 }
 
+# Added somment git
+
 assert len(state_names) == len(button_names) == len(page_functions), "Inconsistent lengths of state_names, button_names, and page_functions"
 assert len(state_names) > 0, "No pages defined"
 

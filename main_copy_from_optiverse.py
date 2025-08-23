@@ -12,17 +12,46 @@ def main():
         os.path.join(optiverse_dir, 'connectors'),
         os.path.join(optiverse_dir, 'utils'),
     ]
+    folders_copied = []
     for folder in folders_to_copy_from_optiverse:
         dest_folder = os.path.join(this_dir, 'optiverse_' + os.path.basename(folder))
         os.system(f"cp -r {folder} {dest_folder}")  # Copy and even rewrite if exists
+        folders_copied.append(dest_folder)
 
-    # Git commit and push changes only the above folders
-    os.system("git add optiverse_connectors optiverse_utils")
+    # Git commit and push changes only the above folders that were copied from optiverse
+    os.system("git add " + " ".join(folders_copied))
     os.system("git commit -m 'Updated Optiverse folders'")
     os.system("git push")
-    
+
     ########################################################################################
     ########################################################################################
+
+    ###########################################################################################
+    ### 2. Copy the last 10 backtest_results from the backtest folder and commit###
+    ###########################################################################################
+    import ipdb; ipdb.set_trace()
+    backtest_folder = os.path.join(optiverse_dir, 'backtest_results')
+    this_dir_backtest_folder = os.path.join(this_dir, 'optiverse_backtest_results')
+    os.makedirs(this_dir_backtest_folder, exist_ok=True)  # Create if not exists
+    num_backtests_to_copy = 10
+    all_backtest = sorted([foldername for foldername in os.listdir(backtest_folder) if 'backtest__' in foldername])
+    all_backtest = all_backtest[-num_backtests_to_copy:]
+    git_folders = []
+    for backtest in all_backtest:
+        src_folder = os.path.join(backtest_folder, backtest)
+        dest_folder = os.path.join(this_dir_backtest_folder, backtest)
+        os.system(f"cp -r {src_folder} {dest_folder}")
+        git_folders.append( os.path.join('optiverse_backtest_results', backtest))
+
+    import ipdb; ipdb.set_trace()
+    # Git commit and push changes only the above folders that were copied from optiverse
+    for folder in git_folders:
+        os.system(f"git add '{folder}'")
+    os.system("git commit -m 'Updated Optiverse backtest results'")
+    os.system("git push")
+
+    ###########################################################################################
+    ###########################################################################################
 
 
     ###########################################################################################
