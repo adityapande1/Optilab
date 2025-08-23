@@ -48,12 +48,12 @@ st.markdown(
 )
 
 # --- Navigation buttons (side by side with small gap) ---
-state_names = ["Home", "Candlesticks", "Analyze", "Trade", "Yellow"]
+state_names = ["Home", "Candlesticks", "Analyze Backtest Results", "Trade", "Yellow"]
 button_names = ["btn_home", "btn_candlesticks", "btn_analyze", "btn_trade", "btn_yellow"]
 page_functions = {
     "Home": run_home,
     "Candlesticks": run_candlesticks,
-    "Analyze": run_analyze,
+    "Analyze Backtest Results": run_analyze,
     "Trade": run_trade,
     "Yellow": run_yello
 }
