@@ -12,6 +12,8 @@ def main():
     folders_to_copy_from_optiverse = [
         os.path.join(optiverse_dir, 'connectors'),
         os.path.join(optiverse_dir, 'utils'),
+        os.path.join(optiverse_dir, 'strategy'),
+        os.path.join(optiverse_dir, 'backtest'),
     ]
     folders_copied = []
     for folder in folders_to_copy_from_optiverse:
@@ -26,6 +28,9 @@ def main():
     os.system("git commit -m 'Updated Optiverse folders'")
     os.system("git push")
 
+    print("\n" + "#"*80)
+    print("#"*5 + " Copied folders from Optiverse and pushed to git ".center(70) + "#"*5)
+    print("#"*80 + "\n")
     ###########################################################################################
     ###########################################################################################
 
@@ -57,6 +62,9 @@ def main():
     os.system("git commit -m 'Updated Optiverse backtest results'")
     os.system("git push")
 
+    print("\n" + "#"*80)
+    print("#"*5 + " Copied backtest results from Optiverse and pushed to git ".center(70) + "#"*5)
+    print("#"*80 + "\n")
     ###########################################################################################
     ###########################################################################################
 
@@ -77,6 +85,9 @@ def main():
 
     # Copy database files
     shutil.copytree(original_database_folder, this_dir_database_folder, dirs_exist_ok=True)
+    print("\n" + "#"*80)
+    print("#"*5 + " Copied database folder from Optiverse ".center(70) + "#"*5)
+    print("#"*80 + "\n")
     ###########################################################################################
     ###########################################################################################
 
@@ -92,6 +103,12 @@ def main():
     os.system(f"git add {this_dir_py_file_path}")
     os.system("git commit -m 'Updated Constants.py'")
     os.system("git push")
+
+    print("\n" + "#"*80)
+    print("#"*5 + " Copied .py files from Optiverse ".center(70) + "#"*5)
+    print("#"*80 + "\n")
+    ###########################################################################################
+    ###########################################################################################
 
 
 if __name__ == "__main__":
