@@ -26,8 +26,8 @@ def main():
     os.system("git commit -m 'Updated Optiverse folders'")
     os.system("git push")
 
-    ########################################################################################
-    ########################################################################################
+    ###########################################################################################
+    ###########################################################################################
 
     ###########################################################################################
     ### 2. Copy the last <num_backtests_to_copy> backtest_results from Optiverse and commit ###
@@ -60,18 +60,37 @@ def main():
     ###########################################################################################
     ###########################################################################################
 
+    ###########################################################################################
+    ### 3. Copy paste exact database folder ###
+    ###########################################################################################
+    original_database_folder = os.path.join(optiverse_dir, 'database')
+    this_dir_database_folder = os.path.join(this_dir, 'database')
+    os.makedirs(this_dir_database_folder, exist_ok=True)
 
+    # Remove all contents in the database folder
+    for f in os.listdir(this_dir_database_folder):
+        path = os.path.join(this_dir_database_folder, f)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
+
+    # Copy database files
+    shutil.copytree(original_database_folder, this_dir_database_folder, dirs_exist_ok=True)
+    ###########################################################################################
+    ###########################################################################################
 
     ###########################################################################################
-    ### 3. Add Logic here to update the database according to the optiverse database folder ###
+    ### 4. Copy paste .py files 
     ###########################################################################################
-
-    # TODO: Implement database update logic here
-
-    ###########################################################################################
-    ###########################################################################################
+    original_py_file_path = os.path.join(optiverse_dir, 'Constants.py')
+    this_dir_py_file_path = os.path.join(this_dir, 'Constants.py')
 
 
+    # Git
+    os.system(f"git add {this_dir_py_file_path}")
+    os.system("git commit -m 'Updated Constants.py'")
+    os.system("git push")
 
 
 if __name__ == "__main__":

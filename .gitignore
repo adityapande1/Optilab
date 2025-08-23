@@ -212,3 +212,6 @@ __marimo__/
 
 # Add ipynb files
 *.ipynb
+
+# database folder
+database/
