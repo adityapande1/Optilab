@@ -15,7 +15,7 @@ def main():
     ]
     folders_copied = []
     for folder in folders_to_copy_from_optiverse:
-        dest_folder = os.path.join(this_dir, 'optiverse_' + os.path.basename(folder))
+        dest_folder = os.path.join(this_dir, os.path.basename(folder))
         if os.path.exists(dest_folder):
             shutil.rmtree(dest_folder)  # Remove existing destination folder
         os.system(f"cp -r {folder} {dest_folder}")  # Copy and even rewrite if exists
@@ -33,8 +33,11 @@ def main():
     ### 2. Copy the last <num_backtests_to_copy> backtest_results from Optiverse and commit ###
     ###########################################################################################
     original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results')
-    this_dir_backtest_folder = os.path.join(this_dir, 'optiverse_backtest_results')
+    this_dir_backtest_folder = os.path.join(this_dir, 'backtest_results')
     os.makedirs(this_dir_backtest_folder, exist_ok=True)
+    # Remove all contents in the backtest results folder
+    for f in os.listdir(this_dir_backtest_folder):
+        shutil.rmtree(os.path.join(this_dir_backtest_folder, f))
 
     num_backtests_to_copy = 10  # The number of backtests to copy from original source
 
@@ -48,7 +51,7 @@ def main():
         src = os.path.join(original_backtest_folder, backtest)
         dest = os.path.join(this_dir_backtest_folder, backtest)
         shutil.copytree(src, dest, dirs_exist_ok=True)  # overwrite if exists
-        os.system(f"git add 'optiverse_backtest_results/{backtest}'")
+        os.system(f"git add 'backtest_results/{backtest}'")
 
     # Commit and push
     os.system("git commit -m 'Updated Optiverse backtest results'")
