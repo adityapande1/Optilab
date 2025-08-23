@@ -4,7 +4,10 @@ def main():
     optiverse_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Optiverse'))
     this_dir = os.path.abspath(os.path.dirname(__file__))
 
-    # 1. Folders that will be copied as is from optiverse with the 'optiverse_' prefix
+    ########################################################################################
+    ### 1. Folders that will be copied as is from optiverse with the 'optiverse_' prefix ###
+    ########################################################################################
+
     folders_to_copy_from_optiverse = [
         os.path.join(optiverse_dir, 'connectors'),
         os.path.join(optiverse_dir, 'utils'),
@@ -17,6 +20,21 @@ def main():
     os.system("git add .")
     os.system("git commit -m 'Updated Optiverse folders'")
     os.system("git push")
+    
+    ########################################################################################
+    ########################################################################################
+
+
+    ###########################################################################################
+    ### 2. Add Logic here to update the database according to the optiverse database folder ###
+    ###########################################################################################
+
+    # TODO: Implement database update logic here
+
+    ###########################################################################################
+    ###########################################################################################
+
+
 
 
 if __name__ == "__main__":

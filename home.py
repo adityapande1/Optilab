@@ -10,7 +10,15 @@ import streamlit.components.v1 as components
 
 def run():
     st.markdown("---")
-    st.title("Optiverse : A gajodhar.ai enterprise")
+    # Elegant Minimal (Apple-like clean, grey tone)
+    st.markdown(
+        """
+        <h1 style="font-family:Helvetica Neue, sans-serif; font-weight:350; color:#2c3e50;">
+            Optilab : A <span style="color:#da1a78; font-style:italic;">gajodhar.ai</span> enterprise
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
     st.markdown("---")
 
     info_text = {

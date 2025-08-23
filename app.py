@@ -2,6 +2,7 @@ import streamlit as st
 from analyze import run as run_analyze
 from trade import run as run_trade
 from home import run as run_home    
+from yello import run as run_yello
 from candlesticks import run as run_candlesticks    
 
 # --- Wide page setting filling complete window ---
@@ -47,28 +48,28 @@ st.markdown(
 )
 
 # --- Navigation buttons (side by side with small gap) ---
-col1, col2, col3, col4 = st.columns([0.1, 0.1, 0.1, 0.1], gap="small")
-with col1:
-    if st.button("Home", key="btn_home"):
-        st.session_state.page = "Home"
-with col2:
-    if st.button("Candlesticks", key="btn_candlesticks"):
-        st.session_state.page = "Candlesticks"
-with col3:
-    if st.button("Analyze", key="btn_analyze"):
-        st.session_state.page = "Analyze"
-with col4:
-    if st.button("Trade", key="btn_trade"):
-        st.session_state.page = "Trade"
+state_names = ["Home", "Candlesticks", "Analyze", "Trade", "Yellow"]
+button_names = ["btn_home", "btn_candlesticks", "btn_analyze", "btn_trade", "btn_yellow"]
+page_functions = {
+    "Home": run_home,
+    "Candlesticks": run_candlesticks,
+    "Analyze": run_analyze,
+    "Trade": run_trade,
+    "Yellow": run_yello
+}
 
+assert len(state_names) == len(button_names) == len(page_functions), "Inconsistent lengths of state_names, button_names, and page_functions"
+assert len(state_names) > 0, "No pages defined"
 
-# --- Render selected page ---
-if st.session_state.page == "Home":
-    run_home()
-elif st.session_state.page == "Analyze":
-    run_analyze()
-elif st.session_state.page == "Trade":
-    run_trade()
-elif st.session_state.page == "Candlesticks":
-    run_candlesticks()
+# --- Create columns for navigation buttons ---
+cols=st.columns(len(state_names), gap="small")
+for col, state_name, button_name in zip(cols, state_names, button_names):
+    with col:
+        if st.button(state_name, key=button_name):
+            st.session_state.page = state_name
+
+# --- Render selected page dynamically ---
+if "page" in st.session_state and st.session_state.page in page_functions:
+    page_functions[st.session_state.page]()
+
 
