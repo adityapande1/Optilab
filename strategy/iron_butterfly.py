@@ -16,7 +16,7 @@ class IronButterflyStrategy(Strategy):
                  strike_gap: Union[int] = 50,
                  left_strike_multiple: Union[int] = 1,
                  right_strike_multiple: Union[int] = 1,
-                 entry_timestamp: pd.Timestamp = pd.Timestamp("09:28"),
+                 entry_timestamp: pd.Timestamp = pd.Timestamp("09:16"),
                  exit_timestamp: pd.Timestamp = pd.Timestamp("15:20")
                  ):
         super().__init__(config, dbconnector)
@@ -140,15 +140,14 @@ class IronButterflyStrategy(Strategy):
             desc = "A neutral strategy that profits from high volatility as our position is long."
         about_str += f"Description : {desc}\n"
         about_str += f"For each day, If market is open\n"
-        about_str += f"     Enter an Iron Butterfly of (nearest) ATM at {self.entry_timestamp.time().strftime('%H:%M:%S')} at close of NIFTY\n\n"
+        about_str += f"     Enter an Iron Butterfly of (nearest) ATM at {self.entry_timestamp.time().strftime('%H:%M:%S')} at close of NIFTY\n"
         if self.long_or_short == "short":
             our_pos, opposite_pos = "SHORT", "LONG"
         elif self.long_or_short == "long":
             our_pos, opposite_pos = "LONG", "SHORT"
         about_str += f"     Net position: \n"
-        about_str += f"         {opposite_pos}: left_strike (center_strike - {self.strike_gap} x {self.left_strike_multiple}) [OTM PUT] (X1)\n"
-        about_str += f"         {our_pos}: center_strike [ATM] (X2)\n"
-        about_str += f"         {opposite_pos}: right_strike (center_strike + {self.strike_gap} x {self.right_strike_multiple}) [OTM CALL] (X1)\n\n"
-
+        about_str += f"         {opposite_pos}: [OTM PUT] left_strike : (center_strike - {self.strike_gap} x {self.left_strike_multiple}) (X1)\n"
+        about_str += f"         {our_pos}: [ATM] center_strike (X2)\n"
+        about_str += f"         {opposite_pos}: [OTM CALL] right_strike : (center_strike + {self.strike_gap} x {self.right_strike_multiple}) (X1)\n"
         about_str += f"     Exit if time is 15:20 is reached\n"
         return about_str
