@@ -1,0 +1,12 @@
+Name : Iron Butterfly Strategy : __/\__ 
+Our Net Position : SHORT
+Description : A neutral strategy that profits from low volatility as our position is short.
+For each day, If market is open
+     Enter an Iron Butterfly of the nearest expiry at 9:16 close of NIFTY
+
+     Net position: 
+         LONG: left_strike [OTM PUT] (X1)
+         SHORT: center_strike [ATM] (X2)
+         LONG: right_strike [OTM CALL] (X1)
+
+     Exit if time is 15:20 is reached
