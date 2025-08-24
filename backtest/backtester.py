@@ -256,7 +256,7 @@ class BackTester:
                 validated_actions = self.validate_actions(actions)
                 new_orders = self._collect_orders(validated_actions, current_timestamp)
                 self.outstanding_orders.extend(new_orders)
-                import ipdb; ipdb.set_trace()
+
             # 3. Process the orders using process_orders function            
             metadata = self.process_orders(current_timestamp)
 
@@ -268,19 +268,25 @@ class BackTester:
 
         # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.        
         self.update_final_metrics()
-        import ipdb; ipdb.set_trace()
 
-    def save_backtest_results(self, save_dir: str = None):
+    def save_results(self, save_dir: str = None):
         '''Saves the backtest results to the specified directory'''
+        
         save_dir = os.path.join('./backtest_results', f"{self.backtest_code}") if save_dir is None else save_dir
         os.makedirs(save_dir, exist_ok=True)
+        
         self.config.save(save_dir)  # Save the backtest configuration
         self.strategy.config.save(save_dir)  # Save the strategy configuration
-        self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
+        
         for hash, df_position in self.hash2position_dfs.items():    # Save df_position 
             df_position.to_parquet(os.path.join(save_dir, f"df_position_{hash}.parquet"))
+        self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
+        
         if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):   # Save about strategy if about() function implemented
             with open(os.path.join(save_dir, "about_strategy.txt"), "w") as f:
                 f.write(self.strategy.about())
         print(f"Backtest results saved to {save_dir}")
 
+        # Position tally data
+        for hash, position_dict in self.strategy.position_tally.items():
+            position_dict['opened']['action'].save(savedir=save_dir, filename=f"action_{hash}.json")
