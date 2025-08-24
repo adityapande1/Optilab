@@ -14,6 +14,8 @@ import time
 import os
 import json
 
+import strategy
+
 @dataclass
 class BacktestConfig:
     start_date: pd.Timestamp
@@ -286,5 +288,8 @@ class BackTester:
         self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
         for hash, df_position in self.hash2position_dfs.items():
             df_position.to_parquet(os.path.join(save_dir, f"df_position_{hash}.parquet"))
+        if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):
+            with open(os.path.join(save_dir, "about_strategy.txt"), "w") as f:
+                f.write(self.strategy.about())
         print(f"Backtest results saved to {save_dir}")
 

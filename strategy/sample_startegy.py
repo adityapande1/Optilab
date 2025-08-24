@@ -70,3 +70,9 @@ class SampleStrategy(Strategy):
                 self.position_tally[filled_position['hash']]['opened'] = filled_position #AP
                 self.position_tally[filled_position['hash']]['closed'] = None #AP
 
+    def about(self):
+        about_str  = f"Name: SampleStrategy\n"
+        about_str += f"For each day, If market is open\n"
+        about_str += f"  Enter a ATM straddle of the nearest expiry at 9:30 close of NIFTY\n"
+        about_str += f"  Exit if time is 15:20 is reached\n"
+        return about_str
