@@ -199,11 +199,7 @@ def run():
 
         fig = plotly_stem(hash2position_dfs_filtered)
         st.plotly_chart(fig, use_container_width=True)
-        
-        # st.write(hash2position_dfs_filtered)
-        # for hash_key, df_position in hash2position_dfs_filtered.items():
-        #     st.write(f"**Position Data for Hash {hash_key}:**")
-        #     st.write(df_position)
+
     else:
         st.write("The visualization is not running.")
 
