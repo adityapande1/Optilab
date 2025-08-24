@@ -172,7 +172,7 @@ def run():
         slideIndex++;
         if (slideIndex > slides.length) {{slideIndex = 1}}
         slides[slideIndex-1].classList.add("active");
-        setTimeout(showSlides, 4000); // Change every 4 seconds
+        setTimeout(showSlides, 3000); // Change every 3 seconds
     }}
     showSlides();
     </script>
