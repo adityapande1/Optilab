@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 import os
-from strategy import StrategyConfig
+from strategy import StrategyConfig, Action
 from backtest.backtester import BacktestConfig 
 from utils.data_utils import read_parquet_data
 import matplotlib.pyplot as plt
@@ -50,7 +50,12 @@ def filter_metrics(hash2position_dfs:dict[int, pd.DataFrame], df_portfolio_metri
 
 
 
-def plotly_stem(hash2position_dfs):
+
+
+def plotly_stem(hash2position_dfs, backtest_dir):
+
+    action_json_filepaths = [fl for fl in os.listdir(backtest_dir) if fl.endswith(".json") and fl.startswith("action_")]
+
     # Ensure consistent index union across all dfs
     all_index = pd.Index(sorted(set().union(*[df.index for df in hash2position_dfs.values()])))
     aligned_dfs = {h: df.reindex(all_index) for h, df in hash2position_dfs.items()}
@@ -60,7 +65,22 @@ def plotly_stem(hash2position_dfs):
 
     # Subplots: combined at top + one per hash
     n_plots = len(hash2position_dfs) + 1
-    titles = ["Combined PnL"] + [f"Hash: {h}" for h in aligned_dfs.keys()]
+    titles = ["Combined PnL"]
+    hash_titles =[]
+    for h in aligned_dfs.keys():
+        filename = f'action_{int(h)}.json'
+        
+        if filename in action_json_filepaths:
+            action = Action.load(os.path.join(backtest_dir, filename))
+        else:
+            action = None
+        action_key = ''
+        if action is not None:
+            action_key = action.key
+
+        hash_titles.append(f"Hash: {h}  : Action : {action_key}")
+    titles += hash_titles
+
     fig = make_subplots(rows=n_plots, cols=1, shared_xaxes=True, 
                         vertical_spacing=0.05, subplot_titles=titles)
 
@@ -153,7 +173,6 @@ def run():
 
         # Write padded time like 9:5 ===> 09:05
         initial_backtest_pd_timestamp = pd.Timestamp(f"{initial_backtest_date} {initial_backtest_hour:02d}:{initial_backtest_minute:02d}")
-        st.write(f"**Initial Backtest TS :** \n\n {initial_backtest_pd_timestamp}")
 
         # select date in sidebar
         st.sidebar.markdown("---")
@@ -180,13 +199,20 @@ def run():
 
             # Write padded time like 9:5 ===> 09:05
             final_backtest_pd_timestamp = pd.Timestamp(f"{final_backtest_date} {final_backtest_hour:02d}:{final_backtest_minute:02d}")
-            st.write(f"**Final Backtest TS :** \n\n {final_backtest_pd_timestamp}")
+
 
     st.sidebar.markdown("---")
 
     # if initial_backtest_pd_timestamp and final_backtest_pd_timestamp are not None the I want a button that can be presse called GO
     viz_state = False
     if initial_backtest_pd_timestamp is not None and final_backtest_pd_timestamp is not None:
+
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader(f"**Initial Backtest TS :** {initial_backtest_pd_timestamp} Day : {initial_backtest_pd_timestamp.day_name()}")
+        with col2:
+            st.subheader(f"**Final Backtest TS :** {final_backtest_pd_timestamp} Day : {final_backtest_pd_timestamp.day_name()}")
+
         if st.sidebar.button("🧿 --- **VISUALIZE** --- 🧿"):
             st.session_state.run_backtest = True
             viz_state = True
@@ -197,7 +223,7 @@ def run():
         st.write("The visualization is currently running.")
         hash2position_dfs_filtered, df_portfolio_metrics_filtered = filter_metrics(hash2position_dfs, df_portfolio_metrics, initial_backtest_pd_timestamp, final_backtest_pd_timestamp)
 
-        fig = plotly_stem(hash2position_dfs_filtered)
+        fig = plotly_stem(hash2position_dfs_filtered, backtest_dir=selected_backtest_dir)
         st.plotly_chart(fig, use_container_width=True)
 
     else:
