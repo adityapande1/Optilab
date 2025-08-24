@@ -67,11 +67,6 @@ class Order:
         order_key = f"{self.action.key}__{self.timestamp}"
         self.hash = self._generate_positive_hash(order_key)
 
-    def to_dict(self):
-        d = self.__dict__.copy()
-        d["action"] = self.action.to_dict()  # serialize Action inside
-        return d
-
     def _generate_positive_hash(self, s: str) -> int:
         h = hashlib.sha256(s.encode("utf-8")).digest()
         # Take first 8 bytes (64 bits) and make it an integer
@@ -100,10 +95,6 @@ class BackTester:
             if pos_dict['hash'] == hash:
                 return pos_dict
         return None
-
-    def fetch_position_hashes(self) -> list[int]:
-        """Fetch the hashes of all currently open positions of the strategy"""
-        return [pos_dict['hash'] for pos_dict in self.strategy.position]
 
     def _initialize_metrics(self, timestamps: pd.DatetimeIndex):
         self.df_portfolio_metrics = pd.DataFrame(index=timestamps)
@@ -265,7 +256,7 @@ class BackTester:
                 validated_actions = self.validate_actions(actions)
                 new_orders = self._collect_orders(validated_actions, current_timestamp)
                 self.outstanding_orders.extend(new_orders)
-
+                import ipdb; ipdb.set_trace()
             # 3. Process the orders using process_orders function            
             metadata = self.process_orders(current_timestamp)
 

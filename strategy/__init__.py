@@ -2,10 +2,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 import json
 from pathlib import Path
-from typing import Union
+from typing import Union, Dict, Any
 import datetime as dt
 import pandas as pd
 from connectors.dbconnector import DBConnector
+
 
 @dataclass
 class StrategyConfig:
@@ -51,8 +52,8 @@ class StrategyConfig:
 class Action:
     option_type: str                   # must be "CE" or "PE"
     strike: Union[int, float]          # must be positive
-    trade_type: str                      # must be "buy" or "sell"
-    expiry: Union[str, dt.date, pd.Timestamp]   # must be provided
+    trade_type: str                    # must be "buy" or "sell"
+    expiry: str                        # must be provided
     order_type: str                    # must be "market" or "limit"
     num_lots: int = 1                  # positive integer, default = 1
     limit_price: Union[int, float, None] = None  # required only if order_type="limit"
@@ -70,7 +71,7 @@ class Action:
         assert self.order_type in ("market", "limit"), "order_type must be 'market' or 'limit'"
         if self.order_type == "limit":
             assert self.limit_price is not None, "limit_price must be specified for limit orders"
-        assert isinstance(self.expiry, (str, dt.date, pd.Timestamp)), "expiry must be str, date, or Timestamp"
+        assert isinstance(self.expiry, str), "expiry must be a string format 'YYYY-MM-DD' "
         assert self.lot_type in ("full", "split"), "lot_type must be 'full' or 'split'"
         assert isinstance(self.lot_idx, int) and self.lot_idx > 0, "lot_idx must be a positive integer"
 
@@ -89,9 +90,6 @@ class Action:
 
         if self.order_type == "limit":
             self.key += f"__limit_price={round(self.limit_price, 6)}"
-
-    def to_dict(self):
-        return asdict(self)
 
     def split(self):
         """Return a list of Actions with num_lots=1, lot_type='split', and unique lot_idx."""
@@ -126,8 +124,37 @@ class Action:
             lot_idx=self.lot_idx,
             square_off_id=None
         )
+    
+    def save(self, savedir: str, filename: str = "action.json"):
+        path = Path(savedir)
+        path.mkdir(parents=True, exist_ok=True)
 
+        data = asdict(self)
+        # only convert Timestamps, not all strings
+        for k, v in data.items():
+            if isinstance(v, pd.Timestamp):
+                data[k] = v.isoformat()
 
+        file_path = path / filename
+        with open(file_path, "w") as f:
+            json.dump(data, f, indent=4)
+
+    @classmethod
+    def load(cls, action_json_path: str):
+        with open(action_json_path, "r") as f:
+            data = json.load(f)
+
+        # safely restore timestamps only if they look like ISO timestamps
+        for k, v in data.items():
+            if isinstance(v, str):
+                try:
+                    ts = pd.Timestamp(v)
+                    # keep only if valid ISO string, not words like "buy" or "CE"
+                    if v == ts.isoformat():
+                        data[k] = ts
+                except Exception:
+                    pass
+        return cls(**data)
 
 class Strategy(ABC):
     """Base class for all trading strategies."""
