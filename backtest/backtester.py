@@ -277,7 +277,7 @@ class BackTester:
 
         # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.        
         self.update_final_metrics()
-        # import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
 
     def save_backtest_results(self, save_dir: str = None):
         '''Saves the backtest results to the specified directory'''
@@ -286,9 +286,9 @@ class BackTester:
         self.config.save(save_dir)  # Save the backtest configuration
         self.strategy.config.save(save_dir)  # Save the strategy configuration
         self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
-        for hash, df_position in self.hash2position_dfs.items():
+        for hash, df_position in self.hash2position_dfs.items():    # Save df_position 
             df_position.to_parquet(os.path.join(save_dir, f"df_position_{hash}.parquet"))
-        if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):
+        if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):   # Save about strategy if about() function implemented
             with open(os.path.join(save_dir, "about_strategy.txt"), "w") as f:
                 f.write(self.strategy.about())
         print(f"Backtest results saved to {save_dir}")
