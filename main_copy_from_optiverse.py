@@ -48,11 +48,11 @@ def main():
         else:
             os.remove(path)
 
-    num_backtests_to_copy = 10  # The number of backtests to copy from original source
+    num_backtests_to_copy = 20  # The number of backtests to copy from original source
 
     # Get last N backtests
     all_backtest = sorted(
-        [f for f in os.listdir(original_backtest_folder) if f.startswith('backtest__')]
+        [f for f in os.listdir(original_backtest_folder)]
     )[-num_backtests_to_copy:]
 
     # Copy folders and add to git

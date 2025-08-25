@@ -8,12 +8,6 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-@st.cache_data
-def _load_backtest_stats(backtest_dir):
-    bt_folder_codes = [f for f in os.listdir(backtest_dir) if f.startswith('backtest__')]
-    # f looks like "backtest__BaselineStraddle__2025-08-25_10:46:10" # Remove the backtest__ prefix keep everything after
-    bt_strategy_ts_codes = [f[len('backtest__'):] for f in bt_folder_codes]
-    return sorted(bt_folder_codes), sorted(bt_strategy_ts_codes)
 
 @st.cache_data
 def _all_files_in_directory(directory):
@@ -48,10 +42,6 @@ def filter_metrics(hash2position_dfs:dict[int, pd.DataFrame], df_portfolio_metri
             hash2position_dfs_filtered[hash_key] = df_position_filtered
 
     return hash2position_dfs_filtered, df_portfolio_metrics_filtered
-
-
-
-
 
 def plotly_stem(hash2position_dfs, backtest_dir):
 
@@ -109,19 +99,16 @@ def plotly_stem(hash2position_dfs, backtest_dir):
 
     return fig
 
- 
-
-
 def run():
 
     BACKTEST_DIR = "./backtest_results"
     st.markdown("---\n# Backtest Results Analysis\n---")
 
-    backtest_folder_codes, backtest_strategy_ts_codes = _load_backtest_stats(BACKTEST_DIR)
+    backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR)])
     st.sidebar.subheader("Backtest Selection")
     # A dropdown to select a backtest code
     selected_backtest_strategy_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_strategy_ts_codes, index=0)
-    selected_backtest_dir = f"{BACKTEST_DIR}/backtest__{selected_backtest_strategy_ts_code}"
+    selected_backtest_dir = f"{BACKTEST_DIR}/{selected_backtest_strategy_ts_code}"
     all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
     assert 'backtest_config.json' in all_files_in_selected_backtest_dir
     assert 'strategy_config.json' in all_files_in_selected_backtest_dir
@@ -178,7 +165,8 @@ def run():
         # select date in sidebar
         st.sidebar.markdown("---")
         st.sidebar.subheader("End Viz Date")
-        final_backtest_date = st.sidebar.selectbox("Select Final Backtest Date", all_bt_dates, index=0)
+        final_backtest_dates = [d for d in all_bt_dates if d >= initial_backtest_date]
+        final_backtest_date = st.sidebar.selectbox("Select Final Backtest Date", final_backtest_dates, index=0)
         st.sidebar.write(f"**Final Backtest Date:** {final_backtest_date}")
 
         if pd.to_datetime(final_backtest_date) < pd.to_datetime(initial_backtest_date):
@@ -197,10 +185,8 @@ def run():
                 else:
                     final_backtest_minute = st.selectbox("Select Final Backtest Minute", list(range(0, 60)), index=59)
 
-
             # Write padded time like 9:5 ===> 09:05
             final_backtest_pd_timestamp = pd.Timestamp(f"{final_backtest_date} {final_backtest_hour:02d}:{final_backtest_minute:02d}")
-
 
     st.sidebar.markdown("---")
 
@@ -229,5 +215,3 @@ def run():
 
     else:
         st.write("The visualization is not running.")
-
-    
