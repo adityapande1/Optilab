@@ -126,14 +126,20 @@ class BaselineIronButterfly(Strategy):
                 self.position_tally[filled_position['hash']]['closed'] = None 
 
     def about(self) -> str:
+        
+        if self.long_or_short == "short":
+            about_str  = f"Name : {self.name} : __/\__ \n"
+        elif self.long_or_short == "long":
+            about_str  = f"Name : {self.name} : ‾‾\/‾‾ \n"
 
-        about_str  = f"Name : {self.name} : __/\__ \n"
         about_str += f"Our Net Position : {self.long_or_short.upper()}\n"
+        
         if self.long_or_short == "short":
             desc = "Neutral strategy. Profits from low volatility. Profits when the market is range-bound.| Risk : limited | Profit : limited |"
         elif self.long_or_short == "long":
             desc = "Needs large price movements (in any side) to be profitable. Profits from high volatility.| Risk : limited | Profit : unlimited |"
         about_str += f"Description : {desc}\n"
+        
         about_str += f"For each day, If market is open\n"
         about_str += f"     Enter an Iron Butterfly of (nearest) ATM at {self.entry_timestamp.time().strftime('%H:%M:%S')} at close of underlying\n"
         if self.long_or_short == "short":

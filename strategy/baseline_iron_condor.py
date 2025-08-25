@@ -137,15 +137,19 @@ class BaselineIronCondor(Strategy):
 
 
     def about(self) -> str:
-        about_str  = f"Name : {self.name} : __/‾‾\\__ \n"
+        if self.long_or_short == "short":
+            about_str  = f"Name : {self.name} : __/‾‾\__ \n"
+        elif self.long_or_short == "long":
+            about_str  = f"Name : {self.name} : ‾‾\__/‾‾ \n"
+
         about_str += f"Our Net Position : {self.long_or_short.upper()}\n"
 
         if self.long_or_short == "short":
             desc = "Neutral strategy. Profits from low volatility. Profits when the market stays within a range. | Risk : limited | Profit : limited |"
         elif self.long_or_short == "long":
             desc = "Needs large price movements (in either direction) to be profitable. Profits from high volatility. | Risk : limited | Profit : limited |"
-
         about_str += f"Description : {desc}\n"
+        
         about_str += f"For each day, If market is open\n"
         about_str += f"     Enter an Iron Condor around the ATM at {self.entry_timestamp.time().strftime('%H:%M:%S')} at close of underlying\n"
         about_str += f"     At {self.entry_timestamp.time().strftime('%H:%M:%S')} Find center_strike = ATM strike wrt underlying at this time: \n"

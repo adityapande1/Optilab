@@ -272,7 +272,7 @@ class BackTester:
     def save_results(self, save_dir: str = None):
         '''Saves the backtest results to the specified directory'''
 
-        save_dir = os.path.join('./backtest_results', f"backtest__{self.strategy.name}__{self.backtest_code}") if save_dir is None else save_dir
+        save_dir = os.path.join('./backtest_results', f"{self.strategy.name}__{self.backtest_code}") if save_dir is None else save_dir
         os.makedirs(save_dir, exist_ok=True)
         
         self.config.save(save_dir)  # Save the backtest configuration

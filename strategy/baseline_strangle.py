@@ -119,14 +119,20 @@ class BaselineStrangle(Strategy):
                 self.position_tally[filled_position['hash']]['closed'] = None 
 
     def about(self) -> str:
+        
+        if self.long_or_short == "short":
+            about_str  = f"Name : {self.name} : /‾‾\ \n"
+        elif self.long_or_short == "long":
+            about_str  = f"Name : {self.name} : \__/ \n"
 
-        about_str  = f"Name : {self.name}\n"
         about_str += f"Our Net Position : {self.long_or_short.upper()}\n"
+        
         if self.long_or_short == "short":
             desc = "Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Risk : unlimited"
         elif self.long_or_short == "long":
             desc = "Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited"
         about_str += f"Description : {desc}\n"
+        
         about_str += f"For each day, If market is open\n"
         about_str += f"     At {self.entry_timestamp.time().strftime('%H:%M:%S')} Find center_strike = ATM strike wrt underlying at this time: \n"
         about_str += f"     left_strike : [OTM Put Strike] = center_strike - {self.strike_gap} X {self.left_strike_gap_multiple}\n"
