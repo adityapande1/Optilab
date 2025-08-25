@@ -1,0 +1,14 @@
+{
+    "option_type": "CE",
+    "strike": 24700,
+    "trade_type": "sell",
+    "expiry": "2024-08-22",
+    "order_type": "market",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": null,
+    "target": null
+}

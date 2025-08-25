@@ -1,0 +1,14 @@
+{
+    "option_type": "PE",
+    "strike": 21950,
+    "trade_type": "sell",
+    "expiry": "2024-03-14",
+    "order_type": "market",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": null,
+    "target": null
+}
