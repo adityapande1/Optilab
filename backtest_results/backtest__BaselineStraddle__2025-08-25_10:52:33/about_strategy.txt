@@ -1,0 +1,9 @@
+Name : BaselineStraddle
+Our Net Position : SHORT
+Description : 
+Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Risk : unlimited
+For each day, If market is open
+     Enter an Straddle of (nearest) ATM at 09:15:00 at close of underlying
+     Net position: 
+         SHORT: [ATM Call and ATM Put] of strike according to close at 09:15:00 (X2)
+     Exit if time is 15:25:00 is reached

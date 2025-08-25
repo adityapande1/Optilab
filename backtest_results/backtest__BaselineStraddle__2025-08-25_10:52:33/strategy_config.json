@@ -1,0 +1,5 @@
+{
+    "risk_per_trade": 4000,
+    "reward_to_risk": 0.75,
+    "lot_size": 75
+}

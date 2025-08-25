@@ -1,0 +1,10 @@
+Name : BaselineStrangle
+Our Net Position : SHORT
+Description : Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Risk : unlimited
+For each day, If market is open
+     At 09:17:00 Find center_strike = ATM strike at this time: 
+     left_strike : [OTM Put Strike] = center_strike - 50 X 1
+         SHORT: [OTM PUT] of left_strike (X1)
+     right_strike : [OTM Call Strike] = center_strike + 50 X 1
+         SHORT: [OTM CALL] of right_strike (X1)
+     Exit if time is 15:19:00 is reached

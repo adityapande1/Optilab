@@ -1,0 +1,4 @@
+Name: SampleStrategy
+For each day, If market is open
+     Enter a ATM straddle of the nearest expiry at 9:30 close of NIFTY
+     Exit if time is 15:20 is reached
