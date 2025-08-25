@@ -42,7 +42,11 @@ def main():
     os.makedirs(this_dir_backtest_folder, exist_ok=True)
     # Remove all contents in the backtest results folder
     for f in os.listdir(this_dir_backtest_folder):
-        shutil.rmtree(os.path.join(this_dir_backtest_folder, f))
+        path = os.path.join(this_dir_backtest_folder, f)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
 
     num_backtests_to_copy = 10  # The number of backtests to copy from original source
 

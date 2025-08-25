@@ -11,8 +11,9 @@ from plotly.subplots import make_subplots
 @st.cache_data
 def _load_backtest_stats(backtest_dir):
     bt_folder_codes = [f for f in os.listdir(backtest_dir) if f.startswith('backtest__')]
-    backtest_timestamps = [f.split("__")[1] for f in bt_folder_codes]
-    return sorted(bt_folder_codes), sorted(backtest_timestamps)
+    # f looks like "backtest__BaselineStraddle__2025-08-25_10:46:10" # Remove the backtest__ prefix keep everything after
+    bt_strategy_ts_codes = [f[len('backtest__'):] for f in bt_folder_codes]
+    return sorted(bt_folder_codes), sorted(bt_strategy_ts_codes)
 
 @st.cache_data
 def _all_files_in_directory(directory):
@@ -116,11 +117,11 @@ def run():
     BACKTEST_DIR = "./backtest_results"
     st.markdown("---\n# Backtest Results Analysis\n---")
 
-    backtest_folder_codes, backtest_ts_codes = _load_backtest_stats(BACKTEST_DIR)
+    backtest_folder_codes, backtest_strategy_ts_codes = _load_backtest_stats(BACKTEST_DIR)
     st.sidebar.subheader("Backtest Selection")
     # A dropdown to select a backtest code
-    selected_backtest_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_ts_codes, index=0)
-    selected_backtest_dir = f"{BACKTEST_DIR}/backtest__{selected_backtest_ts_code}"
+    selected_backtest_strategy_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_strategy_ts_codes, index=0)
+    selected_backtest_dir = f"{BACKTEST_DIR}/backtest__{selected_backtest_strategy_ts_code}"
     all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
     assert 'backtest_config.json' in all_files_in_selected_backtest_dir
     assert 'strategy_config.json' in all_files_in_selected_backtest_dir
@@ -144,7 +145,7 @@ def run():
         st.json(strategy_config.__dict__)
     with about_col:
         st.subheader("📊 About Strategy")
-        st.text_area("", value=about_strategy, height=120)
+        st.text_area("", value=about_strategy, height=200)
     st.markdown("---")
 
     # In the sidebar selecation for the backtest dates for viz
