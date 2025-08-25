@@ -243,7 +243,7 @@ class BackTester:
         self.valid_timestamps = self.dbconnector.df_spot.loc[self.config.start_date : self.config.end_date].index
         self.valid_timestamps = self.valid_timestamps.sort_values()
         self._initialize_metrics(timestamps=self.valid_timestamps)
-        self.backtest_code = 'backtest__' + pd.Timestamp.now().strftime("%Y-%m-%d_%H:%M:%S")
+        self.backtest_code = pd.Timestamp.now().strftime("%Y-%m-%d_%H:%M:%S")
 
         for current_timestamp in tqdm(self.valid_timestamps, desc="Running Backtest", unit="timestamp"):
 
@@ -271,8 +271,8 @@ class BackTester:
 
     def save_results(self, save_dir: str = None):
         '''Saves the backtest results to the specified directory'''
-        
-        save_dir = os.path.join('./backtest_results', f"{self.backtest_code}") if save_dir is None else save_dir
+
+        save_dir = os.path.join('./backtest_results', f"backtest__{self.strategy.name}__{self.backtest_code}") if save_dir is None else save_dir
         os.makedirs(save_dir, exist_ok=True)
         
         self.config.save(save_dir)  # Save the backtest configuration

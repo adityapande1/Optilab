@@ -12,6 +12,7 @@ import copy
 class SampleStrategy(Strategy):
     def __init__(self, config: StrategyConfig, dbconnector: DBConnector):
         super().__init__(config, dbconnector)
+        self.name = self.__class__.__name__
         self.position = [] # will contain orders that are 'filled'
         self.outstanding_orders = None # will change later according to orders other than filled
         self.position_tally = {}    #AP
@@ -71,7 +72,7 @@ class SampleStrategy(Strategy):
                 self.position_tally[filled_position['hash']]['closed'] = None #AP
 
     def about(self):
-        about_str  = f"Name: SampleStrategy\n"
+        about_str  = f"Name: {self.name}\n"
         about_str += f"For each day, If market is open\n"
         about_str += f"     Enter a ATM straddle of the nearest expiry at 9:30 close of NIFTY\n"
         about_str += f"     Exit if time is 15:20 is reached\n"
