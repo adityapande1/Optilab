@@ -1,0 +1,12 @@
+Name : BaselineIronCondor : ‾‾\__/‾‾ 
+Our Net Position : LONG
+Description : Needs large price movements (in either direction) to be profitable. Profits from high volatility. | Risk : limited | Profit : limited |
+For each day, If market is open
+     Enter an Iron Condor around the ATM at 10:18:00 at close of underlying
+     At 10:18:00 Find center_strike = ATM strike wrt underlying at this time: 
+     Net position: 
+         SHORT: [Far OTM PUT] leftmost_strike : (center_strike - 50 x 3) (X1)
+         LONG: [Near OTM PUT] left_strike : (center_strike - 50 x 1) (X1)
+         LONG: [Near OTM CALL] right_strike : (center_strike + 50 x 1) (X1)
+         SHORT: [Far OTM CALL] rightmost_strike : (center_strike + 50 x 3) (X1)
+     Exit if time is 13:22:00 is reached

@@ -1,0 +1,8 @@
+Name : BaselineStraddle : \/ 
+Our Net Position : LONG
+Description : Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited
+For each day, If market is open
+     Enter an Straddle of (nearest) ATM at 09:35:00 at close of underlying
+     Net position: 
+         LONG: [ATM Call and ATM Put] of strike according to close at 09:35:00 (X2)
+     Exit if time is 15:05:00 is reached

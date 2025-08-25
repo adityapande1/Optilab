@@ -1,0 +1,10 @@
+Name : BaselineStrangle : \__/ 
+Our Net Position : LONG
+Description : Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited
+For each day, If market is open
+     At 09:35:00 Find center_strike = ATM strike wrt underlying at this time: 
+     left_strike : [OTM Put Strike] = center_strike - 50 X 2
+         LONG: [OTM PUT] of left_strike (X1)
+     right_strike : [OTM Call Strike] = center_strike + 50 X 2
+         LONG: [OTM CALL] of right_strike (X1)
+     Exit if time is 15:05:00 is reached

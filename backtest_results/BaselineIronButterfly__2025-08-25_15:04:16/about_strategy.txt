@@ -1,0 +1,10 @@
+Name : BaselineIronButterfly : ‾‾\/‾‾ 
+Our Net Position : LONG
+Description : Needs large price movements (in any side) to be profitable. Profits from high volatility.| Risk : limited | Profit : unlimited |
+For each day, If market is open
+     Enter an Iron Butterfly of (nearest) ATM at 09:25:00 at close of underlying
+     Net position: 
+         SHORT: [OTM PUT] left_strike : (center_strike - 50 x 1) (X1)
+         LONG: [ATM Call and ATM Put] of center_strike according to close at 09:25:00 (X2)
+         SHORT: [OTM CALL] right_strike : (center_strike + 50 x 1) (X1)
+     Exit if time is 15:20 is reached
