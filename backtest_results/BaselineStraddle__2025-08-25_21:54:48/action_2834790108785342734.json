@@ -1,0 +1,14 @@
+{
+    "option_type": "CE",
+    "strike": 21650,
+    "trade_type": "sell",
+    "expiry": "2024-01-18",
+    "order_type": "market",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": null,
+    "target": null
+}
