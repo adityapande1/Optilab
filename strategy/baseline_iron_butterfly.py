@@ -60,7 +60,7 @@ class BaselineIronButterfly(Strategy):
             filling_price = position_dict['price']
             current_price = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp)
             position_pnl = current_price - filling_price
-            position_pnl = -position_pnl if action.trade_type == "sell" else position_pnl 
+            position_pnl = -position_pnl if action.trade_type == "short" else position_pnl 
             pnl += position_pnl
         pnl = pnl * self.config.lot_size
         return pnl
@@ -82,16 +82,16 @@ class BaselineIronButterfly(Strategy):
             closest_expiry = self.dbconnector.get_closest_expiry(timestamp)    
             
             if self.long_or_short == "short":
-                long_otm_put = Action(option_type="PE", strike=self.left_strike, expiry=closest_expiry, num_lots=1, trade_type="buy", order_type="market")
-                short_atm_call = Action(option_type="CE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="sell", order_type="market")
-                short_atm_put = Action(option_type="PE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="sell", order_type="market")
-                long_otm_call = Action(option_type="CE", strike=self.right_strike, expiry=closest_expiry, num_lots=1, trade_type="buy", order_type="market")
+                long_otm_put = Action(option_type="PE", strike=self.left_strike, expiry=closest_expiry, num_lots=1, trade_type="long", order_type="market")
+                short_atm_call = Action(option_type="CE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="short", order_type="market")
+                short_atm_put = Action(option_type="PE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="short", order_type="market")
+                long_otm_call = Action(option_type="CE", strike=self.right_strike, expiry=closest_expiry, num_lots=1, trade_type="long", order_type="market")
                 actions = [long_otm_put, short_atm_call, short_atm_put, long_otm_call]
             elif self.long_or_short == "long":
-                short_otm_put = Action(option_type="PE", strike=self.left_strike, expiry=closest_expiry, num_lots=1, trade_type="sell", order_type="market")
-                long_atm_call = Action(option_type="CE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="buy", order_type="market")
-                long_atm_put = Action(option_type="PE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="buy", order_type="market")
-                short_otm_call = Action(option_type="CE", strike=self.right_strike, expiry=closest_expiry, num_lots=1, trade_type="sell", order_type="market")
+                short_otm_put = Action(option_type="PE", strike=self.left_strike, expiry=closest_expiry, num_lots=1, trade_type="short", order_type="market")
+                long_atm_call = Action(option_type="CE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="long", order_type="market")
+                long_atm_put = Action(option_type="PE", strike=self.center_strike, expiry=closest_expiry, num_lots=1, trade_type="long", order_type="market")
+                short_otm_call = Action(option_type="CE", strike=self.right_strike, expiry=closest_expiry, num_lots=1, trade_type="short", order_type="market")
                 actions = [short_otm_put, long_atm_call, long_atm_put, short_otm_call]
 
         elif timestamp.time() == self.exit_timestamp.time() or self._has_stoploss_or_target_hit(timestamp):

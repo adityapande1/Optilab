@@ -52,7 +52,7 @@ class StrategyConfig:
 class Action:
     option_type: str                   # must be "CE" or "PE"
     strike: Union[int, float]          # must be positive
-    trade_type: str                    # must be "buy" or "sell"
+    trade_type: str                    # must be "long" or "short"
     expiry: str                        # must be provided
     order_type: str                    # must be "market" or "limit"
     num_lots: int = 1                  # positive integer, default = 1
@@ -67,7 +67,7 @@ class Action:
         assert self.strike > 0, "strike must be positive"
         assert self.option_type in ("CE", "PE"), "option_type must be 'CE' or 'PE'"
         assert isinstance(self.num_lots, int) and self.num_lots > 0, "num_lots must be a positive integer"
-        assert self.trade_type in ("buy", "sell"), "position must be 'buy' or 'sell'"
+        assert self.trade_type in ("long", "short"), "trade_type must be 'long' or 'short'"
         assert self.order_type in ("market", "limit"), "order_type must be 'market' or 'limit'"
         if self.order_type == "limit":
             assert self.limit_price is not None, "limit_price must be specified for limit orders"
@@ -117,7 +117,7 @@ class Action:
             strike=self.strike,
             expiry=self.expiry,
             num_lots=self.num_lots,
-            trade_type="sell" if self.trade_type == "buy" else "buy",
+            trade_type="short" if self.trade_type == "long" else "long",
             order_type=self.order_type,
             limit_price=self.limit_price,
             lot_type=self.lot_type,
@@ -149,7 +149,7 @@ class Action:
             if isinstance(v, str):
                 try:
                     ts = pd.Timestamp(v)
-                    # keep only if valid ISO string, not words like "buy" or "CE"
+                    # keep only if valid ISO string, not words like "long" or "CE"
                     if v == ts.isoformat():
                         data[k] = ts
                 except Exception:

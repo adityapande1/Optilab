@@ -35,8 +35,8 @@ class SampleStrategy(Strategy):
         if timestamp.time() == pd.Timestamp("09:20").time(): 
             strike = self.dbconnector.get_ATM_strike(timestamp)
             closest_expiry = self.dbconnector.get_closest_expiry(timestamp)
-            sell_call = Action(option_type="CE", strike=strike, expiry=closest_expiry, num_lots=1, trade_type="sell", order_type="market")
-            sell_put  = Action(option_type="PE", strike=strike, expiry=closest_expiry, num_lots=1, trade_type="sell", order_type="market")
+            sell_call = Action(option_type="CE", strike=strike, expiry=closest_expiry, num_lots=1, trade_type="short", order_type="market")
+            sell_put  = Action(option_type="PE", strike=strike, expiry=closest_expiry, num_lots=1, trade_type="short", order_type="market")
             actions = [sell_call, sell_put]
 
         elif timestamp.time() == pd.Timestamp("15:20").time():

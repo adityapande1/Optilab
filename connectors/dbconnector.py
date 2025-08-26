@@ -78,5 +78,3 @@ if __name__ == "__main__":
     db = DBConnector()
     df_option = db.get_option_df(option_type="CE", strike=22500, expiry_date="2025-05-08")
     price = db.get_option_price(strike=22500, option_type="CE", expiry_date="2025-05-08", timestamp=pd.Timestamp("2025-05-08 9:25:00"))
-
-    import ipdb; ipdb.set_trace()
