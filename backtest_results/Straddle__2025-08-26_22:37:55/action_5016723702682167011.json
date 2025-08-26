@@ -1,0 +1,14 @@
+{
+    "option_type": "CE",
+    "strike": 22750,
+    "trade_type": "short",
+    "expiry": "2024-06-06",
+    "order_type": "market",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": null,
+    "target": null
+}
