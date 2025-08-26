@@ -7,7 +7,7 @@ from utils.data_utils import read_parquet_data
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
+from optilab_constants import BACKTEST_DIR
 
 @st.cache_data
 def _all_files_in_directory(directory):
@@ -101,7 +101,7 @@ def plotly_stem(hash2position_dfs, backtest_dir):
 
 def run():
 
-    BACKTEST_DIR = "./backtest_results"
+    # BACKTEST_DIR = "./backtest_results"
     st.markdown("---\n# Backtest Results Analysis\n---")
 
     backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR)])
@@ -110,11 +110,15 @@ def run():
     selected_backtest_strategy_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_strategy_ts_codes, index=0)
     selected_backtest_dir = f"{BACKTEST_DIR}/{selected_backtest_strategy_ts_code}"
     all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
-    assert 'backtest_config.json' in all_files_in_selected_backtest_dir
-    assert 'strategy_config.json' in all_files_in_selected_backtest_dir
+    # assert 'backtest_config.json' in all_files_in_selected_backtest_dir
+    # assert 'strategy_config.json' in all_files_in_selected_backtest_dir
 
-    strategy_config = StrategyConfig.load(os.path.join(selected_backtest_dir, 'strategy_config.json'))
-    backtest_config = BacktestConfig.load(os.path.join(selected_backtest_dir, 'backtest_config.json'))
+    backtest_config_dict, strategy_config_dict = {}, {}
+    if 'backtest_config.json' in all_files_in_selected_backtest_dir:
+        backtest_config_dict = BacktestConfig.load(os.path.join(selected_backtest_dir, 'backtest_config.json')).__dict__
+    if 'strategy_config.json' in all_files_in_selected_backtest_dir:
+        strategy_config_dict = StrategyConfig.load(os.path.join(selected_backtest_dir, 'strategy_config.json')).__dict__
+
 
     if 'about_strategy.txt' in all_files_in_selected_backtest_dir:
         with open(os.path.join(selected_backtest_dir, 'about_strategy.txt'), 'r') as f:
@@ -122,17 +126,16 @@ def run():
     else:
         about_strategy = "No information available"
 
-    # make three cols with width 0.8, 1.2, 2 ratio
-    strategy_col, backtest_col, about_col = st.columns([0.75, 1.5, 1.75])
-    with backtest_col:
+    # Two main columns: left (configs), right (about)
+    left_col, right_col = st.columns([1, 2])
+    with left_col:
         st.subheader("📊 Backtest Config")
-        st.json(backtest_config.__dict__)
-    with strategy_col:
+        st.json(backtest_config_dict)
         st.subheader("📊 Strategy Config")
-        st.json(strategy_config.__dict__)
-    with about_col:
+        st.json(strategy_config_dict)
+    with right_col:
         st.subheader("📊 About Strategy")
-        st.text_area("", value=about_strategy, height=200)
+        st.text_area("", value=about_strategy, height=400,label_visibility="collapsed")
     st.markdown("---")
 
     # In the sidebar selecation for the backtest dates for viz

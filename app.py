@@ -3,7 +3,7 @@ from app_backtest_results import run as run_backtest_results
 from app_trade import run as run_trade
 from app_home import run as run_home    
 from app_yello import run as run_yello
-from app_candlesticks import run as run_candlesticks    
+from app_daily_pnl import run as run_daily_pnl    
 
 # --- Wide page setting filling complete window ---
 st.set_page_config(
@@ -48,12 +48,12 @@ st.markdown(
 )
 
 # --- Navigation buttons (side by side with small gap) ---
-state_names = ["Home", "Candlesticks", "Analyze Backtest Results", "Trade", "Yellow"]
-button_names = ["btn_home", "btn_candlesticks", "btn_analyze_backtest_results", "btn_trade", "btn_yellow"]
+state_names = ["Home", "Analyze Backtest Results", "Daily PnL", "Trade", "Yellow"]
+button_names = ["btn_home", "btn_analyze_backtest_results", "btn_daily_pnl", "btn_trade", "btn_yellow"]
 page_functions = {
     "Home": run_home,
-    "Candlesticks": run_candlesticks,
     "Analyze Backtest Results": run_backtest_results,
+    "Daily PnL": run_daily_pnl,
     "Trade": run_trade,
     "Yellow": run_yello
 }
