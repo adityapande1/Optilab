@@ -72,12 +72,14 @@ class Straddle(Strategy):
         elif timestamp.time() == self.config.exit_timestamp.time(): 
             actions = self.square_off_actions()
         else:
+
             square_off_ids = set()
             for pos in self.position:
                 if self._check_exit_condition(pos, timestamp):      # Will be different for each strategy
                     square_off_ids.add(pos['hash'])
 
-            actions = self.square_off_actions(square_off_ids)
+            if len(square_off_ids) > 0:           
+                actions = self.square_off_actions(square_off_ids)
 
         return actions
     

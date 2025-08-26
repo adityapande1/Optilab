@@ -45,10 +45,10 @@ class Parser:
 
         # Backtest configuration
         self.parser.add_argument("--start_date", type=str, default="2024-01-01", metavar="YYYY-MM-DD", help="Backtest start date")
-        self.parser.add_argument("--end_date", type=str, default="2024-02-28", metavar="YYYY-MM-DD", help="Backtest end date")
+        self.parser.add_argument("--end_date", type=str, default="2025-07-31", metavar="YYYY-MM-DD", help="Backtest end date")
 
         # Entry-Exit rules
-        self.parser.add_argument("--entry_time", type=str, default="9:20:00", metavar="HH:MM:SS", help="Time to enter positions each day")
+        self.parser.add_argument("--entry_time", type=str, default="9:15:00", metavar="HH:MM:SS", help="Time to enter positions each day")
         self.parser.add_argument("--exit_time", type=str, default="15:20:00", metavar="HH:MM:SS", help="Time to forcefully exit all positions each day")
 
         # Position sizing
