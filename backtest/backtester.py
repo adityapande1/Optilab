@@ -188,7 +188,8 @@ class BackTester:
 
         if opening_action.order_type in ["market_stoploss", "market_stoploss_trail"]:
             assert tally_dict['opened']['stoploss_price_level'] is not None, "Stoploss order_type must have a stoploss_price_level"
-            df_position.at[end_timestamp, 'price'] = tally_dict['opened']['stoploss_price_level']
+            if tally_dict['opened']['stoploss_hit_timestamp']:
+                df_position.at[end_timestamp, 'price'] = tally_dict['opened']['stoploss_price_level']
 
         self.initialized_position_hashes.add(hash)
         return df_position.copy()
