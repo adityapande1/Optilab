@@ -98,8 +98,8 @@ def main():
     ###########################################################################################
     ### 4. Copy paste .py files 
     ###########################################################################################
-    original_py_file_path = os.path.join(optiverse_dir, 'Constants.py')
-    this_dir_py_file_path = os.path.join(this_dir, 'Constants.py')
+    original_py_file_path = os.path.join(optiverse_dir, 'constants.py')
+    this_dir_py_file_path = os.path.join(this_dir, 'constants.py')
     shutil.copy2(original_py_file_path, this_dir_py_file_path)
 
 
