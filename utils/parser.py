@@ -44,7 +44,7 @@ class Parser:
         # --- Common args ---
         # Backtest configuration
         self.parser.add_argument("--start_date", type=str, default="2024-01-01", metavar="YYYY-MM-DD", help="Backtest start date")
-        self.parser.add_argument("--end_date", type=str, default="2024-01-12", metavar="YYYY-MM-DD", help="Backtest end date")
+        self.parser.add_argument("--end_date", type=str, default="2025-07-31", metavar="YYYY-MM-DD", help="Backtest end date")
         self.parser.add_argument("--transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees")
         # Common strategy configuration
         self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
