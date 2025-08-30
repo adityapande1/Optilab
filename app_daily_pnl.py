@@ -1,6 +1,4 @@
 import streamlit as st
-from strategy import StrategyConfig
-from backtest.backtester import BacktestConfig
 import os
 from utils.data_utils import read_parquet_data
 from optilab_constants import BACKTEST_DIR

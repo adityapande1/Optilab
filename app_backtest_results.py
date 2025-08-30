@@ -1,8 +1,7 @@
 import pandas as pd
 import streamlit as st
 import os
-from strategy import StrategyConfig, Action
-from backtest.backtester import BacktestConfig 
+from strategy import  Action
 from utils.data_utils import read_parquet_data
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
