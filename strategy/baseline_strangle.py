@@ -1,12 +1,12 @@
 from typing import Union
-from strategy import Strategy, Action, StrategyConfig
+from strategy import Strategy, Action
 from connectors.dbconnector import DBConnector
 import pandas as pd
 import copy
 
 class BaselineStrangle(Strategy):
     def __init__(self, 
-                 config: StrategyConfig, 
+                 config, 
                  dbconnector: DBConnector, 
                  long_or_short: str = "short",
                  strike_gap: Union[int, float] = 50,

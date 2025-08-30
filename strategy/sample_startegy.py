@@ -1,5 +1,5 @@
 from typing import Union
-from strategy import Strategy, Action, StrategyConfig
+from strategy import Strategy, Action
 from connectors.dbconnector import DBConnector
 import pandas as pd
 import copy
@@ -10,7 +10,7 @@ import copy
 #     - Exit if time is 15:20 is reached
 
 class SampleStrategy(Strategy):
-    def __init__(self, config: StrategyConfig, dbconnector: DBConnector):
+    def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)
         self.name = self.__class__.__name__
         self.position = [] # will contain orders that are 'filled'

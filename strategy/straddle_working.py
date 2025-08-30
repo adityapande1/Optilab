@@ -3,7 +3,6 @@ from strategy import Strategy, Action
 from connectors.dbconnector import DBConnector
 import pandas as pd
 import copy
-from rich import print
 
 class Straddle(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
@@ -65,31 +64,22 @@ class Straddle(Strategy):
         if timestamp.time() == self.config.entry_timestamp.time(): 
             
             self.strike = self.dbconnector.get_ATM_strike(timestamp)
-            closest_expiry = self.dbconnector.get_closest_expiry(timestamp)
-            
-            #atm_call_action = Action(option_type="CE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type="market")
-            #atm_put_action = Action(option_type="PE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type="market")
-
-            atm_call_action = Action(option_type="CE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, 
-                                     order_type=self.config.call_order_type, stoploss=self.config.call_risk)
-            
-            atm_put_action = Action(option_type="PE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, 
-                                    order_type=self.config.put_order_type, stoploss=self.config.put_risk)
-            
+            closest_expiry = self.dbconnector.get_closest_expiry(timestamp)    
+            atm_call_action = Action(option_type="CE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type="market")
+            atm_put_action = Action(option_type="PE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type="market")
             actions = [atm_call_action, atm_put_action]
 
         elif timestamp.time() == self.config.exit_timestamp.time(): 
             actions = self.square_off_actions()
-        # else:
-        #     pass
+        else:
 
-            # square_off_ids = set()
-            # for pos in self.position:
-            #     if self._check_exit_condition(pos, timestamp):      # Will be different for each strategy
-            #         square_off_ids.add(pos['hash'])
+            square_off_ids = set()
+            for pos in self.position:
+                if self._check_exit_condition(pos, timestamp):      # Will be different for each strategy
+                    square_off_ids.add(pos['hash'])
 
-            # if len(square_off_ids) > 0:           
-            #     actions = self.square_off_actions(square_off_ids)
+            if len(square_off_ids) > 0:           
+                actions = self.square_off_actions(square_off_ids)
 
         return actions
     

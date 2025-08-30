@@ -6,47 +6,8 @@ from typing import Union, Dict, Any
 import datetime as dt
 import pandas as pd
 from connectors.dbconnector import DBConnector
+from rich import print
 
-
-@dataclass
-class StrategyConfig:
-    risk_per_trade: float    
-    reward_to_risk: float    
-    lot_size: int = 75
-
-    def __post_init__(self):
-        assert self.risk_per_trade > 0, "risk_per_trade must be positive"
-        assert self.reward_to_risk > 0, "reward_to_risk must be positive"
-        assert self.lot_size > 0, "lot_size must be positive"
-        self.reward_per_trade = self.risk_per_trade * self.reward_to_risk
-
-    def __repr__(self):
-        return f"StrategyConfig(risk_per_trade={self.risk_per_trade}, reward_to_risk={self.reward_to_risk}, reward_per_trade={self.reward_per_trade}, lot_size={self.lot_size})"
-
-    def save(self, savedir: str):
-        path = Path(savedir)
-        path.mkdir(parents=True, exist_ok=True)
-
-        data = asdict(self)
-        for k, v in data.items():
-            if isinstance(v, pd.Timestamp):
-                data[k] = v.isoformat()
-
-        filename = path / "strategy_config.json"
-        with open(filename, "w") as f:
-            json.dump(data, f, indent=4)
-    
-    @classmethod
-    def load(cls, strategy_config_json_path):
-        with open(strategy_config_json_path, "r") as f:
-            data = json.load(f)
-        for k, v in data.items():
-            if isinstance(v, str):
-                try:
-                    data[k] = pd.Timestamp(v)
-                except ValueError:
-                    pass
-        return cls(**data)
 
 @dataclass
 class Action:
@@ -54,23 +15,26 @@ class Action:
     strike: Union[int, float]          # must be positive
     trade_type: str                    # must be "long" or "short"
     expiry: str                        # must be provided
-    order_type: str                    # must be "market" or "limit"
+    order_type: str                    # must be "market", "limit", "market_stoploss", or "market_stoploss_trail"
     num_lots: int = 1                  # positive integer, default = 1
     limit_price: Union[int, float, None] = None  # required only if order_type="limit"
     lot_type: str = "full"             # "full" or "split"
     lot_idx: int = 1                   # index always starts at 1
     square_off_id: Union[int, None] = None  # Unique hash for the action
-    stoploss: Union[int, float, None] = None  # Stoploss price
+    stoploss: Union[int, float, None] = None  # Stoploss value in points    
     target: Union[int, float, None] = None  # Target price
+
 
     def __post_init__(self):
         assert self.strike > 0, "strike must be positive"
         assert self.option_type in ("CE", "PE"), "option_type must be 'CE' or 'PE'"
         assert isinstance(self.num_lots, int) and self.num_lots > 0, "num_lots must be a positive integer"
         assert self.trade_type in ("long", "short"), "trade_type must be 'long' or 'short'"
-        assert self.order_type in ("market", "limit"), "order_type must be 'market' or 'limit'"
+        assert self.order_type in ("market", "limit", "market_stoploss", "market_stoploss_trail"), "order_type must be 'market', 'limit', 'market_stoploss', or 'market_stoploss_trail'"
         if self.order_type == "limit":
             assert self.limit_price is not None, "limit_price must be specified for limit orders"
+        if self.order_type in ("market_stoploss", "market_stoploss_trail"):
+            assert self.stoploss is not None, "Initial stoploss must be specified for stoploss orders"
         assert isinstance(self.expiry, str), "expiry must be a string format 'YYYY-MM-DD' "
         assert self.lot_type in ("full", "split"), "lot_type must be 'full' or 'split'"
         assert isinstance(self.lot_idx, int) and self.lot_idx > 0, "lot_idx must be a positive integer"
@@ -122,7 +86,9 @@ class Action:
             limit_price=self.limit_price,
             lot_type=self.lot_type,
             lot_idx=self.lot_idx,
-            square_off_id=None
+            square_off_id=None,
+            stoploss=self.stoploss,
+            target=self.target
         )
     
     def save(self, savedir: str, filename: str = "action.json"):
@@ -159,7 +125,7 @@ class Action:
 class Strategy(ABC):
     """Base class for all trading strategies."""
 
-    def __init__(self, config: StrategyConfig, dbconnector: DBConnector):
+    def __init__(self, config, dbconnector: DBConnector):
         """Initialize strategy with config and database connector."""
         self.config = config
         self.dbconnector = dbconnector

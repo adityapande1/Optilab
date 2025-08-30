@@ -38,32 +38,39 @@ class ReadOnlyConfig:
 
 class Parser:
     def __init__(self):
-
         self.parser = argparse.ArgumentParser(description="Options Strategy Config Parser")
 
-        # --- Common args ---
+        # --- Common ---
+        self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
+
         # Backtest configuration
         self.parser.add_argument("--start_date", type=str, default="2024-01-01", metavar="YYYY-MM-DD", help="Backtest start date")
-        self.parser.add_argument("--end_date", type=str, default="2024-01-12", metavar="YYYY-MM-DD", help="Backtest end date")
-        self.parser.add_argument("--transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees")
-        # Common strategy configuration
-        self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
+        self.parser.add_argument("--end_date", type=str, default="2025-07-31", metavar="YYYY-MM-DD", help="Backtest end date")
+
+        # Entry-Exit rules
         self.parser.add_argument("--entry_time", type=str, default="9:15:00", metavar="HH:MM:SS", help="Time to enter positions each day")
         self.parser.add_argument("--exit_time", type=str, default="15:20:00", metavar="HH:MM:SS", help="Time to forcefully exit all positions each day")
-        self.parser.add_argument("--lot_size", type=int, default=75, help="Lot size for trading")
-        # ------------------
 
-        # --- Straddle args ---
-        # Call leg configuration
+        # Position sizing
+        self.parser.add_argument("--lot_size", type=int, default=75, help="Lot size for trading")
+
+        # Transaction costs
+        self.parser.add_argument("--transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees")
+
+        # Risk management
+        # To be discussed
+        # self.parser.add_argument("--risk_per_trade", type=float, default=1000.0, metavar="₹", help="Risk per trade in rupees")
+        # self.parser.add_argument("--reward_to_risk", type=float, default=1.0, help="Reward-to-risk ratio")
+        # To be discussed
+
+        # --- Straddle ---
         straddle_group = self.parser.add_argument_group("straddle")
-        straddle_group.add_argument("--straddle_call_risk", type=float, default=float("inf"), metavar="₹", help="Risk for the call leg in a straddle (₹). The leg gets cut if this risk is breached.")
-        straddle_group.add_argument("--trail_call_risk", action="store_true", help="Whether to trail the stoploss risk for the call leg.")
-        # Put leg configuration
-        straddle_group.add_argument("--straddle_put_risk", type=float, default=float("inf"), metavar="₹", help="Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.")
-        straddle_group.add_argument("--trail_put_risk", action="store_true", help="Whether to trail the stoploss risk for the put leg.")
-        # Overall straddle configuration
+        straddle_group.add_argument("--straddle_call_risk", type=float, default=float("inf"), metavar="₹", 
+                                    help="Risk for the call leg in a straddle (₹). The leg gets cut if this risk is breached.")
+        straddle_group.add_argument("--straddle_put_risk", type=float, default=float("inf"), metavar="₹", 
+                                    help="Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.")
+        # long_or_short
         straddle_group.add_argument("--straddle_long_or_short", type=str, choices=["long", "short"], default="short", help="Direction of the straddle position")
-        # -------------------
 
     def parse_args(self):
         self.args = self.parser.parse_args()
@@ -78,25 +85,14 @@ class Parser:
 
     # --- Config getters ---
     def get_straddle_config(self):
-        config_dict = {
-
-            "long_or_short": self.args.straddle_long_or_short,
-            
+        return ReadOnlyConfig({
             "call_risk": self.args.straddle_call_risk,
-            "trail_call_risk": self.args.trail_call_risk,
-
             "put_risk": self.args.straddle_put_risk,
-            "trail_put_risk": self.args.trail_put_risk,
-            
+            "long_or_short": self.args.straddle_long_or_short,
             "lot_size": self.args.lot_size,
             "entry_timestamp": pd.Timestamp(self.args.entry_time),
             "exit_timestamp": pd.Timestamp(self.args.exit_time)
-        }
-
-        config_dict['call_order_type'] = 'market_stoploss_trail' if config_dict['trail_call_risk'] else 'market_stoploss'   # If the trail_call_risk is False it means we are using a regular stoploss
-        config_dict['put_order_type'] = 'market_stoploss_trail' if config_dict['trail_put_risk'] else 'market_stoploss'     # If the trail_put_risk is False it means we are using a regular stoploss
-
-        return ReadOnlyConfig(config_dict)
+        })
 
 
 if __name__ == "__main__":

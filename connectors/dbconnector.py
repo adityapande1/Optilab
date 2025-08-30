@@ -1,6 +1,6 @@
 import pandas as pd
 from utils.data_utils import read_parquet_data, read_option_data
-from Constants import NIFTY_PARQUET_PATH, GLOBAL_DB_FOLDERPATH, NIFTY_EXPIRIES_JSON_PATH
+from constants import NIFTY_PARQUET_PATH, GLOBAL_DB_FOLDERPATH, NIFTY_EXPIRIES_JSON_PATH
 import json
 
 class DBConnector:

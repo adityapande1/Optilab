@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Constants import GLOBAL_DB_FOLDERPATH
+from constants import GLOBAL_DB_FOLDERPATH
 
 def read_parquet_data(file_path: str | Path, drop_duplicate_indices: bool = True) -> pd.DataFrame:
     """Read a Parquet file into a DataFrame, optionally removing duplicate indices."""
@@ -55,7 +55,7 @@ def resample_stock_data(df: pd.DataFrame, interval: int = 5) -> pd.DataFrame:
 import json
 import os
 
-def update_json(json_filepath, key, value):
+def update_json_and_save(json_filepath, key, value):
     """Update a key in a JSON file (insert key:value if missing, overwrite key:value if exists)."""
     if not os.path.exists(json_filepath):
         raise FileNotFoundError(f"JSON file not found: {json_filepath}")
