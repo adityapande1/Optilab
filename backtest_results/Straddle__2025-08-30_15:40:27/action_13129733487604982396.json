@@ -1,0 +1,14 @@
+{
+    "option_type": "CE",
+    "strike": 24700,
+    "trade_type": "short",
+    "expiry": "2025-05-22",
+    "order_type": "market_stoploss",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": 100000.0,
+    "target": null
+}
