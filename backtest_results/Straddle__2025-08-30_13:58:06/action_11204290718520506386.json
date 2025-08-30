@@ -1,0 +1,14 @@
+{
+    "option_type": "PE",
+    "strike": 24500,
+    "trade_type": "short",
+    "expiry": "2025-05-15",
+    "order_type": "market_stoploss_trail",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": 4100.0,
+    "target": null
+}
