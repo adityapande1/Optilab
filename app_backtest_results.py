@@ -113,11 +113,6 @@ def run():
     # assert 'strategy_config.json' in all_files_in_selected_backtest_dir
 
     backtest_config_dict, strategy_config_dict = {}, {}
-    if 'backtest_config.json' in all_files_in_selected_backtest_dir:
-        backtest_config_dict = BacktestConfig.load(os.path.join(selected_backtest_dir, 'backtest_config.json')).__dict__
-    if 'strategy_config.json' in all_files_in_selected_backtest_dir:
-        strategy_config_dict = StrategyConfig.load(os.path.join(selected_backtest_dir, 'strategy_config.json')).__dict__
-
 
     if 'about_strategy.txt' in all_files_in_selected_backtest_dir:
         with open(os.path.join(selected_backtest_dir, 'about_strategy.txt'), 'r') as f:
