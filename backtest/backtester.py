@@ -86,7 +86,11 @@ class BackTester:
         raise ValueError(f"{square_off_id} is an invalid hash for a square-off action.")
 
     def validate_actions(self, actions: list[Action]) -> list[Action]:
-        '''Validate a list of actions. Check square_off_id validity for each square_off action.'''
+        """
+        Validate a list of actions. Check square_off_id validity for each square_off action.
+        An action is valid if its a fresh new action (with no square_off_id) OR it has a valid square_off_id
+        Having a valid square_off_id means it corresponds(is opposite action to) to a previously filled and still open position in self.strategy.position
+        """
         validated_actions = []
         for action in actions:
             if action.square_off_id:
@@ -123,9 +127,10 @@ class BackTester:
             'action': order.action,
             'trade_type': order.action.trade_type,
             'price': None,
-            'stoploss_price_level': None,    #AP
-            'previous_highest_level': None,   #AP
-            'previous_lowest_level': None      #AP
+            'stoploss_price_level': None,     # AP
+            'previous_highest_level': None,   # AP
+            'previous_lowest_level': None,    # AP     
+            'stoploss_hit_timestamp': None,   # AP      # The timestamp at which stoploss hits(if it does)
         }
 
         market_price = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='close')
@@ -173,13 +178,18 @@ class BackTester:
 
     def _create_df_position(self, tally_dict: dict, hash: int, valid_timestamps: pd.Index) -> pd.DataFrame:
         start_timestamp = tally_dict['opened']['timestamp']
-        action = tally_dict['opened']['action']
+        opening_action = tally_dict['opened']['action']
         end_timestamp = tally_dict['closed']['timestamp']
         subset_timestamps = valid_timestamps[(valid_timestamps >= start_timestamp) & (valid_timestamps <= end_timestamp)]
-        df_position = self.dbconnector.get_option_df(option_type=action.option_type, strike=action.strike, expiry_date=action.expiry)
+        df_position = self.dbconnector.get_option_df(option_type=opening_action.option_type, strike=opening_action.strike, expiry_date=opening_action.expiry)
         df_position = df_position.loc[subset_timestamps]
         df_position = df_position[['close']]    # choose only the 'close' price
         df_position = df_position.rename(columns={'close': 'price'})    # rename it to price
+
+        if opening_action.order_type in ["market_stoploss", "market_stoploss_trail"]:
+            assert tally_dict['opened']['stoploss_price_level'] is not None, "Stoploss order_type must have a stoploss_price_level"
+            df_position.at[end_timestamp, 'price'] = tally_dict['opened']['stoploss_price_level']
+
         self.initialized_position_hashes.add(hash)
         return df_position.copy()
 
@@ -302,13 +312,13 @@ class BackTester:
                 stoploss_check = self.check_stoploss_condition(stoploss_price_level=pos['stoploss_price_level'], ohlc_list=ohlc, trade_type=action.trade_type)
                 if stoploss_check:
                     square_off_ids.add(pos['hash'])
+                    # print(f"Stoploss hit for position: {pos['hash']} at {timestamp}")
+                    pos['stoploss_hit_timestamp'] = timestamp
 
         stoploss_actions = self.strategy.square_off_actions(square_off_ids=square_off_ids)
 
         return stoploss_actions
 
-
-            
         # Discussion
         # For pos in self.strategy.position
             # action = pos['action'] 
@@ -332,9 +342,11 @@ class BackTester:
                 continue  # Skip the timestamp for which we don't have data
 
             strategy_actions = self.strategy.action(current_timestamp)
-            stoploss_actions = self.get_stoploss_actions(current_timestamp)       # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
-            actions = (strategy_actions or []) + (stoploss_actions or [])                           # Python idiom !!! Pretty cool
+            stoploss_actions = self.get_stoploss_actions(current_timestamp)     # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
+            actions = (strategy_actions or []) + (stoploss_actions or [])       # Python idiom !!! Pretty cool
 
+            # if stoploss_actions:
+            #     import ipdb; ipdb.set_trace()
             # if actions:
             #     import ipdb; ipdb.set_trace()
 
