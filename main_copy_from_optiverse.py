@@ -50,74 +50,75 @@ def main():
 
     # Commit and push changes
     if True:
+        os.system("git add -A")  # stage deletions and modifications
         os.system("git commit -m 'Removed previous backtest results'")
         os.system("git push")
 
-    num_backtests_to_copy = 20  # The number of backtests to copy from original source
+    # num_backtests_to_copy = 20  # The number of backtests to copy from original source
 
-    # Get last N backtests
-    all_backtest = sorted(
-        [f for f in os.listdir(original_backtest_folder)]
-    )[-num_backtests_to_copy:]
+    # # Get last N backtests
+    # all_backtest = sorted(
+    #     [f for f in os.listdir(original_backtest_folder)]
+    # )[-num_backtests_to_copy:]
 
-    # Copy folders and add to git
-    for backtest in all_backtest:
-        src = os.path.join(original_backtest_folder, backtest)
-        dest = os.path.join(this_dir_backtest_folder, backtest)
-        shutil.copytree(src, dest, dirs_exist_ok=True)  # overwrite if exists
-        os.system(f"git add 'backtest_results/{backtest}'")
+    # # Copy folders and add to git
+    # for backtest in all_backtest:
+    #     src = os.path.join(original_backtest_folder, backtest)
+    #     dest = os.path.join(this_dir_backtest_folder, backtest)
+    #     shutil.copytree(src, dest, dirs_exist_ok=True)  # overwrite if exists
+    #     os.system(f"git add 'backtest_results/{backtest}'")
 
-    # Commit and push
-    os.system("git commit -m 'Updated Optiverse backtest results'")
-    os.system("git push")
+    # # Commit and push
+    # os.system("git commit -m 'Updated Optiverse backtest results'")
+    # os.system("git push")
 
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied backtest results from Optiverse and pushed to git ".center(70) + "#"*5)
-    print("#"*80 + "\n")
-    ###########################################################################################
-    ###########################################################################################
+    # print("\n" + "#"*80)
+    # print("#"*5 + " Copied backtest results from Optiverse and pushed to git ".center(70) + "#"*5)
+    # print("#"*80 + "\n")
+    # ###########################################################################################
+    # ###########################################################################################
 
-    ###########################################################################################
-    ### 3. Copy paste exact database folder ###
-    ###########################################################################################
-    original_database_folder = os.path.join(optiverse_dir, 'database')
-    this_dir_database_folder = os.path.join(this_dir, 'database')
-    os.makedirs(this_dir_database_folder, exist_ok=True)
+    # ###########################################################################################
+    # ### 3. Copy paste exact database folder ###
+    # ###########################################################################################
+    # original_database_folder = os.path.join(optiverse_dir, 'database')
+    # this_dir_database_folder = os.path.join(this_dir, 'database')
+    # os.makedirs(this_dir_database_folder, exist_ok=True)
 
-    # Remove all contents in the database folder
-    for f in os.listdir(this_dir_database_folder):
-        path = os.path.join(this_dir_database_folder, f)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
+    # # Remove all contents in the database folder
+    # for f in os.listdir(this_dir_database_folder):
+    #     path = os.path.join(this_dir_database_folder, f)
+    #     if os.path.isdir(path):
+    #         shutil.rmtree(path)
+    #     else:
+    #         os.remove(path)
 
-    # Copy database files
-    shutil.copytree(original_database_folder, this_dir_database_folder, dirs_exist_ok=True)
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied database folder from Optiverse ".center(70) + "#"*5)
-    print("#"*80 + "\n")
-    ###########################################################################################
-    ###########################################################################################
+    # # Copy database files
+    # shutil.copytree(original_database_folder, this_dir_database_folder, dirs_exist_ok=True)
+    # print("\n" + "#"*80)
+    # print("#"*5 + " Copied database folder from Optiverse ".center(70) + "#"*5)
+    # print("#"*80 + "\n")
+    # ###########################################################################################
+    # ###########################################################################################
 
-    ###########################################################################################
-    ### 4. Copy paste .py files 
-    ###########################################################################################
-    original_py_file_path = os.path.join(optiverse_dir, 'constants.py')
-    this_dir_py_file_path = os.path.join(this_dir, 'constants.py')
-    shutil.copy2(original_py_file_path, this_dir_py_file_path)
+    # ###########################################################################################
+    # ### 4. Copy paste .py files 
+    # ###########################################################################################
+    # original_py_file_path = os.path.join(optiverse_dir, 'constants.py')
+    # this_dir_py_file_path = os.path.join(this_dir, 'constants.py')
+    # shutil.copy2(original_py_file_path, this_dir_py_file_path)
 
 
-    # Git commit and push changes only the above folders that were copied from optiverse
-    os.system(f"git add {this_dir_py_file_path}")
-    os.system("git commit -m 'Updated Constants.py'")
-    os.system("git push")
+    # # Git commit and push changes only the above folders that were copied from optiverse
+    # os.system(f"git add {this_dir_py_file_path}")
+    # os.system("git commit -m 'Updated Constants.py'")
+    # os.system("git push")
 
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied .py files from Optiverse ".center(70) + "#"*5)
-    print("#"*80 + "\n")
-    ###########################################################################################
-    ###########################################################################################
+    # print("\n" + "#"*80)
+    # print("#"*5 + " Copied .py files from Optiverse ".center(70) + "#"*5)
+    # print("#"*80 + "\n")
+    # ###########################################################################################
+    # ###########################################################################################
 
 
 if __name__ == "__main__":
