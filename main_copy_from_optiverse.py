@@ -48,6 +48,11 @@ def main():
         else:
             os.remove(path)
 
+    # Commit and push changes
+    if True:
+        os.system("git commit -m 'Removed previous backtest results'")
+        os.system("git push")
+
     num_backtests_to_copy = 20  # The number of backtests to copy from original source
 
     # Get last N backtests
