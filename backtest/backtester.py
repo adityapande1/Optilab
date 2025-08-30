@@ -123,10 +123,14 @@ class BackTester:
             'action': order.action,
             'trade_type': order.action.trade_type,
             'price': None,
-            'stoploss_price_level': None    #AP
+            'stoploss_price_level': None,    #AP
+            'previous_highest_level': None,   #AP
+            'previous_lowest_level': None      #AP
         }
 
         market_price = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='close')
+        highest_level = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='high')
+        lowest_level = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='low')
         if order.action.order_type == "market":
             order.update_status("filled")
             order_stats['price'] = market_price
@@ -136,6 +140,12 @@ class BackTester:
             lot_size = self.strategy.config.lot_size
             stoploss_level = (market_price - order.action.stoploss/lot_size) if order.action.trade_type == "long" else (market_price + order.action.stoploss/lot_size)
             order_stats['stoploss_price_level'] = stoploss_level            # This is the initial level, if its a trail stoploss then this is updated in the backtest loop
+            if order.action.order_type == "market_stoploss_trail":
+                if order.action.trade_type == "long":
+                    order_stats['previous_highest_level'] = highest_level
+                elif order.action.trade_type == "short":
+                    order_stats['previous_lowest_level'] = lowest_level
+
         elif order.action.order_type == "limit":
             raise NotImplementedError("Limit orders are not yet supported.")
         
@@ -144,7 +154,7 @@ class BackTester:
 
     def process_orders(self, timestamp: pd.Timestamp) -> list[dict]:
         """
-        Executes each order in self.outstanding_orders (which might include earlier unfilled orders) and return metadata
+        Executes each order in self.outstanding_orders (which might include earlier unfilled orders) and returns metadata
         Each order --> gets processed --> if "filled" then append the order's stats in metadata(list) else append the order in outstanding_orders.
         Refresh self.outstanding_orders keeping only the unfilled orders.
         """
@@ -244,10 +254,22 @@ class BackTester:
 
     def update_stoploss_price_level(self, pos, timestamp):
         # Update the stoploss price level for the given position
-        if pos['action'].order_type == "market_stoploss":
+        action = pos['action']
+        if action.order_type == "market_stoploss":
             pass
-        elif pos['action'].order_type == "market_stoploss_trail":
-            raise NotImplementedError("Trailing stoploss not yet implemented.")
+        elif action.order_type == "market_stoploss_trail":
+            if action.trade_type == "long":
+                current_highest_level = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp, field='high')
+                if current_highest_level > pos['previous_highest_level']:
+                    gap_up = current_highest_level - pos['previous_highest_level']
+                    pos['stoploss_price_level'] += gap_up
+                    pos['previous_highest_level'] = current_highest_level
+            elif action.trade_type == "short":
+                current_lowest_level = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp, field='low')
+                if current_lowest_level < pos['previous_lowest_level']:
+                    gap_down = pos['previous_lowest_level'] - current_lowest_level
+                    pos['stoploss_price_level'] -= gap_down
+                    pos['previous_lowest_level'] = current_lowest_level
 
     def check_stoploss_condition(self, stoploss_price_level: float, ohlc_list: list, trade_type: str):
         
@@ -263,23 +285,23 @@ class BackTester:
         
         return False
 
-    def get_stoploss_actions(self, actions, timestamp) -> Union[list[Action], None]:
+    def get_stoploss_actions(self, timestamp) -> Union[list[Action], None]:
         """
-        Get the stoploss actions for the current positions
-        At a given timestamp --> For each order with order_type 'market_stoploss' or 'market_stoploss_trail' --> Check if the stoploss condition is met
-        Stoploss condition meets when the position's candle breaches pos['stoploss_price_level']
-        Generate opposite actions for such positions and return them
+        Get stoploss actions for the current strategy positions (self.strategy.position) at a given timestamp.
+        For each order with order_type 'market_stoploss' or 'market_stoploss_trail', check if the stoploss condition is met. If met, generate opposite actions to square off those positions.
+        Returns:
+            list[Action]: Actions required to square off triggered stoploss positions.
         """
 
         square_off_ids = set()
         for pos in self.strategy.position:
             action = pos['action']
             if action.order_type in ["market_stoploss", "market_stoploss_trail"]:
-                    ohlc = self.dbconnector.get_option_df(option_type=action.option_type, strike=action.strike, expiry_date=action.expiry).loc[timestamp, ['open', 'high', 'low', 'close']].values
-                    self.update_stoploss_price_level(pos, timestamp)
-                    stoploss_check = self.check_stoploss_condition(stoploss_price_level=pos['stoploss_price_level'], ohlc_list=ohlc, trade_type=action.trade_type)
-                    if stoploss_check:
-                        square_off_ids.add(pos['hash'])
+                self.update_stoploss_price_level(pos, timestamp)
+                ohlc = self.dbconnector.get_option_df(option_type=action.option_type, strike=action.strike, expiry_date=action.expiry).loc[timestamp, ['open', 'high', 'low', 'close']].values
+                stoploss_check = self.check_stoploss_condition(stoploss_price_level=pos['stoploss_price_level'], ohlc_list=ohlc, trade_type=action.trade_type)
+                if stoploss_check:
+                    square_off_ids.add(pos['hash'])
 
         stoploss_actions = self.strategy.square_off_actions(square_off_ids=square_off_ids)
 
@@ -310,7 +332,7 @@ class BackTester:
                 continue  # Skip the timestamp for which we don't have data
 
             strategy_actions = self.strategy.action(current_timestamp)
-            stoploss_actions = self.get_stoploss_actions(strategy_actions, current_timestamp)       # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
+            stoploss_actions = self.get_stoploss_actions(current_timestamp)       # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
             actions = (strategy_actions or []) + (stoploss_actions or [])                           # Python idiom !!! Pretty cool
 
             # if actions:
