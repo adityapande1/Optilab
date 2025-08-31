@@ -210,5 +210,12 @@ def run():
         fig = plotly_stem(hash2position_dfs_filtered, backtest_dir=selected_backtest_dir)
         st.plotly_chart(fig, use_container_width=True)
 
+        print(hash2position_dfs_filtered.keys())
+        cols = st.columns(len(hash2position_dfs_filtered))
+        for col, key in zip(cols, hash2position_dfs_filtered.keys()):
+            with col:
+                st.write(f"**{key}**")
+                st.dataframe(hash2position_dfs_filtered[key])
+
     else:
         st.write("The visualization is not running.")
