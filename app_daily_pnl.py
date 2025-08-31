@@ -3,6 +3,8 @@ import os
 from utils.data_utils import read_parquet_data
 from optilab_constants import BACKTEST_DIR
 import pandas as pd
+import pickle
+
 
 import streamlit as st
 import plotly.graph_objects as go
@@ -94,11 +96,18 @@ def run():
     selected_backtest_dir = f"{BACKTEST_DIR}/{selected_backtest_strategy_ts_code}"
     all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
     
-    # assert 'backtest_config.json' in all_files_in_selected_backtest_dir
-    # assert 'strategy_config.json' in all_files_in_selected_backtest_dir
-    # strategy_config = StrategyConfig.load(os.path.join(selected_backtest_dir, 'strategy_config.json'))
-    # backtest_config = BacktestConfig.load(os.path.join(selected_backtest_dir, 'backtest_config.json'))
-    backtest_config_dict, strategy_config_dict = {}, {}     # TODO : Add code to save and load
+    assert 'strategy_config.pkl' in all_files_in_selected_backtest_dir
+    assert 'backtester_config.pkl' in all_files_in_selected_backtest_dir
+    strategy_config_path = os.path.join(selected_backtest_dir, 'strategy_config.pkl')
+    backtest_config_path = os.path.join(selected_backtest_dir, 'backtester_config.pkl')
+    # Read pkl file
+    
+
+    with open(backtest_config_path, 'rb') as f:
+        backtest_config_dict = pickle.load(f)
+
+    with open(strategy_config_path, 'rb') as f:
+        strategy_config_dict = pickle.load(f)
 
     if 'about_strategy.txt' in all_files_in_selected_backtest_dir:
         with open(os.path.join(selected_backtest_dir, 'about_strategy.txt'), 'r') as f:
