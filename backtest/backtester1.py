@@ -1,21 +1,30 @@
+from datetime import timedelta
+from pathlib import Path
 from connectors.dbconnector import DBConnector
 import hashlib
 from typing import Union
 from strategy import Action, Strategy
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from tqdm import tqdm
+from collections import defaultdict
 from rich import print
+import numpy as np
+import time
 import os
+import json
 from rich import print
+from constants import BACKTEST_RESULTS_FOLDERPATH1
 import pickle
-from constants import BACKTEST_RESULTS_FOLDERPATH
+
+
 
 @dataclass
 class Order:
     action: Action
     timestamp: pd.Timestamp
     status: str = "pending"   # e.g. pending, filled, cancelled, rejected
+    hash: int | None = None  # Unique hash for the order
 
     def __post_init__(self):
         assert isinstance(self.action, Action), "action must be an Action instance"
@@ -49,15 +58,14 @@ class BackTester:
         self.hash2position_dfs = {}   # Stores dfs of each position (one for each filled order) with key as the hash of that position
         self.initialized_position_hashes = set()
 
+    def fetch_position_dict(self, hash: int) -> dict | None:
+        """Fetch the position dict from the strategy's position list using the hash."""
+        for pos_dict in self.strategy.position:
+            if pos_dict['hash'] == hash:
+                return pos_dict
+        return None
+
     def _initialize_metrics(self, timestamps: pd.DatetimeIndex):
-        """
-        Initialize portfolio metrics DataFrame : self.df_portfolio_metrics with a pd.Datetime index of timestamps.
-        df_portfolio_metrics stores the portfolio's performance metrics over the whole backtesting period.
-        Args:
-            timestamps (pd.DatetimeIndex): The timestamps for the backtesting period. [ Example: self.valid_timestamps in the .run() loop]
-        Returns:
-            None
-        """
         self.df_portfolio_metrics = pd.DataFrame(index=timestamps)
         self.df_portfolio_metrics.index.name = 'timestamp'
 
@@ -66,23 +74,12 @@ class BackTester:
             self.df_portfolio_metrics[metric] = self.df_portfolio_metrics[metric].astype(metric_type)
 
     def validate_action(self, square_off_id: int) -> bool:
-        """
-        Validate whether a `square_off_id` corresponds to an existing position (filled and still open) in `self.strategy.position`.
-
-        A `square_off_id` is valid if there exists a position dictionary in `self.strategy.position` where the `'hash'` key matches the given ID.
-
-        Parameters
-        ----------
-        square_off_id : The unique identifier of the position to validate.
-        
-        Returns
-        -------
-        bool : True if the `square_off_id` has a corresponding position in the current positions.
-
-        Raises
-        ------
-        ValueError : If the square-off ID does not correspond to any existing position.
-        """
+        '''
+        Checks the validity of a square_off_id.
+        A square_off_id is valid if a position dictionary in self.strategy.position has the 'hash' key equal to square_off_id
+        - If the square_off_id exists, it will return True, meaning a square-off action was generated for an existing position.
+        - else raise ERROR : meaning a square-off action was generated for an unfilled or no longer existing position.
+        '''
         for position in self.strategy.position:
             if square_off_id == position['hash']:
                 return True
@@ -91,20 +88,9 @@ class BackTester:
     def validate_actions(self, actions: list[Action]) -> list[Action]:
         """
         Validate a list of actions. Check square_off_id validity for each square_off action.
-
-         - An action is valid if its a fresh new action (with square_off_id as `None`) OR it has a valid square_off_id
-         - For an action, having a valid square_off_id means it corresponds ( is opposite action to ) to a previously filled and still open position in `self.strategy.position`
-
-        Parameters
-        ----------
-        actions : The list of actions to be validated.
-
-        Returns
-        -------
-        validated_actions : The list of validated actions.
-
+        An action is valid if its a fresh new action (with no square_off_id) OR it has a valid square_off_id
+        Having a valid square_off_id means it corresponds(is opposite action to) to a previously filled and still open position in self.strategy.position
         """
-
         validated_actions = []
         for action in actions:
             if action.square_off_id:
@@ -116,51 +102,24 @@ class BackTester:
         return validated_actions
 
     def _collect_orders(self, actions: list[Action], timestamp: pd.Timestamp) -> list[Order]:
-        """
-        Converts a list of actions into a list of orders and returns them.
-
-        - Each action is converted into one or more orders based on its `num_lots`.
-            - If an action has `num_lots` 1, it is converted into a single order.
-            - If an action has `num_lots` greater than 1, it is split into multiple orders, each with `num_lots` 1.
-        - Each order is initialized with status "pending" and assigned a unique `positive` hash based on the action's properties and timestamp.
-
-
-        Parameters
-        ----------
-        timestamp : The timestamp at which the orders are being processed.
-
-        Returns
-        -------
-        collected_orders : A list of orders. Each order corresponds to a single lot action.
-
-        """
-        collected_orders = []
+        '''
+        Make orders (list) from the actions (list), 
+        For an action in actions if action.num_lots > 1 (say n), first split the action into n num_lots=1 split_actions, then make orders for each split_action
+        Making and order from an action : Generate a unique hash for each order | Register the action and the timestamp | Assign status : "pending" |
+        '''
+        orders = []
         for action in actions:
-            action_list = [action] if action.num_lots == 1 else action.split()        # List containing only actions with num_lots=1
-            for single_lot_action in action_list:
-                order = Order(action=single_lot_action, timestamp=timestamp, status="pending")
-                collected_orders.append(order)
-        return collected_orders
+            split_action_list = [action] if action.num_lots == 1 else action.split()
+            for single_lot_action in split_action_list:
+                order = Order(action=single_lot_action, timestamp=timestamp, status="pending", hash=single_lot_action.square_off_id)
+                orders.append(order)
+        return orders
+    
 
     def process_order(self, order: Order, timestamp: pd.Timestamp) -> dict:
         """
-        Return order statistics `dict` for a single order processing it at `timestamp` according to market conditions and action specifications.
-        
-        - Processing an order includes:
-            - Updating the order status based on market conditions and `action.order_type` to pending, filled, cancelled or rejected
-            - Setting stoploss levels if applicable
-            - Setting target levels if applicable
-            - Any other metadata required for position management later
-
-        Parameters
-        ----------
-        order : The `Order` instance to be processed.
-        timestamp : The timestamp at which the order is being processed.
-
-        Returns
-        -------
-        order_stats : A dictionary containing the order statistics after processing.
-
+        Return order statistics for a single order
+        order --> update [status, price, stoploss_price_level ...] according to market_price and order_type of order.action
         """
         order_stats = {
             'hash': order.hash,
@@ -168,26 +127,24 @@ class BackTester:
             'action': order.action,
             'trade_type': order.action.trade_type,
             'price': None,
-            'stoploss_price_level': None,     
-            'previous_highest_level': None,   
-            'previous_lowest_level': None,         
-            'stoploss_hit_timestamp': None,         # The timestamp at which stoploss hits(if it does)
+            'stoploss_price_level': None,     # AP
+            'previous_highest_level': None,   # AP
+            'previous_lowest_level': None,    # AP     
+            'stoploss_hit_timestamp': None,   # AP      # The timestamp at which stoploss hits(if it does)
         }
 
         market_price = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='close')
         highest_level = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='high')
         lowest_level = self.dbconnector.get_option_price(strike=order.action.strike, option_type=order.action.option_type, expiry_date=order.action.expiry, timestamp=timestamp, field='low')
-        
         if order.action.order_type == "market":
             order.update_status("filled")
             order_stats['price'] = market_price
         elif order.action.order_type in ["market_stoploss", "market_stoploss_trail"]:
-            order.update_status("filled")
-            order_stats['price'] = market_price
+            order.update_status("filled")           # AP : will fill as its a market order
+            order_stats['price'] = market_price     # AP : will fill at market price
             lot_size = self.strategy.config.lot_size
             stoploss_level = (market_price - order.action.stoploss/lot_size) if order.action.trade_type == "long" else (market_price + order.action.stoploss/lot_size)
-            order_stats['stoploss_price_level'] = stoploss_level            # This is the initial stoploss level, if its a trail stoploss then this is updated in the backtest loop
-            
+            order_stats['stoploss_price_level'] = stoploss_level            # This is the initial level, if its a trail stoploss then this is updated in the backtest loop
             if order.action.order_type == "market_stoploss_trail":
                 if order.action.trade_type == "long":
                     order_stats['previous_highest_level'] = highest_level
@@ -202,20 +159,9 @@ class BackTester:
 
     def process_orders(self, timestamp: pd.Timestamp) -> list[dict]:
         """
-        Processes all the orders in `self.outstanding_orders` at the given `timestamp` and returns a list of order statistics dictionaries for `filled` orders.
-
-        - Each order is processed individually, and if it is filled, its statistics are collected and appended to the `metadata` list.
-        - The order's statistics are generated based on market conditions and action specifications by `self.process_order()` function.
-        - If an order is not filled, it remains in the `self.outstanding_orders` list for future processing.
-
-        Parameters
-        ----------
-        timestamp : The timestamp at which the orders are being processed.
-
-        Returns
-        -------
-        metadata : A list of dictionaries containing the order statistics for each `filled` order.
-
+        Executes each order in self.outstanding_orders (which might include earlier unfilled orders) and returns metadata
+        Each order --> gets processed --> if "filled" then append the order's stats in metadata(list) else append the order in outstanding_orders.
+        Refresh self.outstanding_orders keeping only the unfilled orders.
         """
         
         metadata, still_outstanding = [], []
@@ -277,11 +223,12 @@ class BackTester:
             df_position["max_drawdown"] = drawdown.cummax()
 
     def update_final_metrics(self):
+        pass
 
-        self._update_final_metric_interval_pnl()
-        self._update_final_metric_pnl()
-        self._update_final_metric_max_drawdown()
-        self._update_final_portfolio_metrics()
+        # self._update_final_metric_interval_pnl()
+        # self._update_final_metric_pnl()
+        # self._update_final_metric_max_drawdown()
+        # self._update_final_portfolio_metrics()
 
     def _update_final_portfolio_metrics(self):
 
@@ -297,20 +244,25 @@ class BackTester:
     def save_results(self, save_dir: str = None):
         '''Saves the backtest results to the specified directory'''
 
-        save_dir = os.path.join(BACKTEST_RESULTS_FOLDERPATH, f"{self.strategy.name}__{self.backtest_code}") if save_dir is None else save_dir
+        save_dir = os.path.join(BACKTEST_RESULTS_FOLDERPATH1, f"{self.strategy.name}__{self.backtest_code}") if save_dir is None else save_dir
         os.makedirs(save_dir, exist_ok=True)
 
+
         strategy_config_dict = self.strategy.config.as_dict()
+        # Use pickle to save strategy config
         with open(os.path.join(save_dir, "strategy_config.pkl"), "wb") as f:
             pickle.dump(strategy_config_dict, f)
 
         backtester_config_dict = self.config.as_dict()
+        # Use pickle to save backtester config
         with open(os.path.join(save_dir, "backtester_config.pkl"), "wb") as f:
             pickle.dump(backtester_config_dict, f)
 
+        # import ipdb; ipdb.set_trace()
+
         for hash, df_position in self.hash2position_dfs.items():    # Save df_position
             df_position.to_parquet(os.path.join(save_dir, f"df_position_{hash}.parquet"))
-        self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
+        #self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
         
         if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):   # Save about strategy if about() function implemented
             with open(os.path.join(save_dir, "about_strategy.txt"), "w") as f:
@@ -321,80 +273,52 @@ class BackTester:
         for hash, position_dict in self.strategy.position_tally.items():
             position_dict['opened']['action'].save(savedir=save_dir, filename=f"action_{hash}.json")
 
-    def update_stoploss_price_level(self, pos: dict, timestamp: pd.Timestamp):
-        """
-        Update the stoploss price level for a given position dictionary.
-
-        - If position's `action.trade_type` is "long", the stoploss is shifted upward (by `gap_up`) if the current candle high exceeds the previous high.
-        - If position's `action.trade_type` is "short", the stoploss is shifted downward (by `gap_down`) if the current candle low is below the previous low.
-
-        Parameters
-        ----------
-        pos : Position dictionary containing action and stoploss details.
-        timestamp : Current timestamp to check for price updates.
-        """
+    def update_stoploss_price_level(self, pos, timestamp):
+        # Update the stoploss price level for the given position
         action = pos['action']
-        if action.trade_type == "long":
-            current_highest_level = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp, field='high')
-            if current_highest_level > pos['previous_highest_level']:
-                gap_up = current_highest_level - pos['previous_highest_level']
-                pos['stoploss_price_level'] += gap_up
-                pos['previous_highest_level'] = current_highest_level
-        elif action.trade_type == "short":
-            current_lowest_level = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp, field='low')
-            if current_lowest_level < pos['previous_lowest_level']:
-                gap_down = pos['previous_lowest_level'] - current_lowest_level
-                pos['stoploss_price_level'] -= gap_down
-                pos['previous_lowest_level'] = current_lowest_level
+        if action.order_type == "market_stoploss":
+            pass
+        elif action.order_type == "market_stoploss_trail":
+            if action.trade_type == "long":
+                current_highest_level = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp, field='high')
+                if current_highest_level > pos['previous_highest_level']:
+                    gap_up = current_highest_level - pos['previous_highest_level']
+                    pos['stoploss_price_level'] += gap_up
+                    pos['previous_highest_level'] = current_highest_level
+            elif action.trade_type == "short":
+                current_lowest_level = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp, field='low')
+                if current_lowest_level < pos['previous_lowest_level']:
+                    gap_down = pos['previous_lowest_level'] - current_lowest_level
+                    pos['stoploss_price_level'] -= gap_down
+                    pos['previous_lowest_level'] = current_lowest_level
 
-    def check_stoploss_condition(self, stoploss_price_level: float, ohlc_list: list[float], trade_type: str):
-        """
-        Check whether the stoploss is hit given stoploss_level and OHLC prices.
-
-        - For a long trade, the stoploss is considered hit if the lowest price falls below the stoploss level.
-        - For a short trade, it is considered hit if the highest price rises above the stoploss level.
-
-        Parameters
-        ----------
-        stoploss_price_level : The stoploss price level to check against.
-        ohlc_list : A list containing the OHLC prices [open, high, low, close].
-        trade_type : The type of trade ('long' or 'short').
-
-        Returns
-        -------
-        bool : True if the stoploss is hit, otherwise False.
-        """
-
+    def check_stoploss_condition(self, stoploss_price_level: float, ohlc_list: list, trade_type: str):
+        
+        """Check if the stoploss condition is met for the given price levels"""
+        
         assert len(ohlc_list) == 4, "ohlc_list must contain 4 elements: (open, high, low, close)"
         assert trade_type in ["long", "short"], "trade_type must be either 'long' or 'short'"
-
+        
         if stoploss_price_level is not None:
             (o, h, l, c) = ohlc_list
             if (trade_type == "long" and l <= stoploss_price_level) or (trade_type == "short" and h >= stoploss_price_level):
                 return True
+        
         return False
 
-    def get_stoploss_actions(self, timestamp: pd.Timestamp) -> Union[list[Action], None]:
+    def get_stoploss_actions(self, timestamp) -> Union[list[Action], None]:
         """
-        Get stoploss actions for the current strategy positions ( `self.strategy.position` ) at a given timestamp. 
-        - For each position with `action.order_type` as "market_stoploss" or "market_stoploss_trail", check if the stoploss condition is met. 
-        - If met, generate opposite actions to square off those positions.
-
-        Parameters
-        ----------
-            timestamp : The timestamp at which to check for stoploss condition.
-
-        Returns
-        -------
-            stoploss_actions : Actions required to square off the positions for which stoploss conditions were met.
+        Get stoploss actions for the current strategy positions (self.strategy.position) at a given timestamp.
+        For each order with order_type 'market_stoploss' or 'market_stoploss_trail', check if the stoploss condition is met. If met, generate opposite actions to square off those positions.
+        Returns:
+            list[Action]: Actions required to square off triggered stoploss positions.
         """
 
         square_off_ids = set()
         for pos in self.strategy.position:
             action = pos['action']
             if action.order_type in ["market_stoploss", "market_stoploss_trail"]:
-                if action.order_type == "market_stoploss_trail":
-                    self.update_stoploss_price_level(pos, timestamp)
+                self.update_stoploss_price_level(pos, timestamp)
                 ohlc = self.dbconnector.get_option_df(option_type=action.option_type, strike=action.strike, expiry_date=action.expiry).loc[timestamp, ['open', 'high', 'low', 'close']].values
                 stoploss_check = self.check_stoploss_condition(stoploss_price_level=pos['stoploss_price_level'], ohlc_list=ohlc, trade_type=action.trade_type)
                 if stoploss_check:
@@ -405,6 +329,17 @@ class BackTester:
         stoploss_actions = self.strategy.square_off_actions(square_off_ids=square_off_ids)
 
         return stoploss_actions
+
+        # Discussion
+        # For pos in self.strategy.position
+            # action = pos['action'] 
+            # if action is of stoploss type:
+                # if action has 'trail':
+                    # update pos['trail_price'] 
+                # check =  checkstoploss_condition(pos)     
+                # if check:
+                    # generate opposite_action()
+        # pass
 
     def run(self) -> dict:
     
@@ -420,6 +355,11 @@ class BackTester:
             strategy_actions = self.strategy.action(current_timestamp)
             stoploss_actions = self.get_stoploss_actions(current_timestamp)     # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
             actions = (strategy_actions or []) + (stoploss_actions or [])       # Python idiom !!! Pretty cool
+
+            # if stoploss_actions:
+            #     import ipdb; ipdb.set_trace()
+            # if actions:
+            #     import ipdb; ipdb.set_trace()
 
             if actions:
                 validated_actions = self.validate_actions(actions)                          # Checks all Action(s) with square_off_id(if not None) have corresponding filled_position in self.strategy.position
@@ -438,3 +378,4 @@ class BackTester:
         # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.        
         self.update_final_metrics()
 
+        # import ipdb; ipdb.set_trace()
