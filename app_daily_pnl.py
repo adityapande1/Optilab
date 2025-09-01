@@ -84,25 +84,29 @@ def _get_backtest_dataframes(backtest_dir):
 
 def run():
     st.markdown("---\n# Daily P&L Analysis\n---")
+    # BACKTEST_DIR_NEW = '../OptiverseDelete/backtest_results_old/'
     backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR)])
+    print(backtest_strategy_ts_codes)
+    # backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR_NEW) if '.DS_Store' not in f])
+
     st.sidebar.subheader("Backtest Selection")
     # A dropdown to select a backtest code
     selected_backtest_strategy_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_strategy_ts_codes, index=0)
     selected_backtest_dir = f"{BACKTEST_DIR}/{selected_backtest_strategy_ts_code}"
     all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
     
-    assert 'strategy_config.pkl' in all_files_in_selected_backtest_dir
-    assert 'backtester_config.pkl' in all_files_in_selected_backtest_dir
-    strategy_config_path = os.path.join(selected_backtest_dir, 'strategy_config.pkl')
-    backtest_config_path = os.path.join(selected_backtest_dir, 'backtester_config.pkl')
-    # Read pkl file
+    # assert 'strategy_config.pkl' in all_files_in_selected_backtest_dir
+    # assert 'backtester_config.pkl' in all_files_in_selected_backtest_dir
+    # strategy_config_path = os.path.join(selected_backtest_dir, 'strategy_config.pkl')
+    # backtest_config_path = os.path.join(selected_backtest_dir, 'backtester_config.pkl')
+    # # Read pkl file
     
 
-    with open(backtest_config_path, 'rb') as f:
-        backtest_config_dict = pickle.load(f)
+    # with open(backtest_config_path, 'rb') as f:
+    #     backtest_config_dict = pickle.load(f)
 
-    with open(strategy_config_path, 'rb') as f:
-        strategy_config_dict = pickle.load(f)
+    # with open(strategy_config_path, 'rb') as f:
+    #     strategy_config_dict = pickle.load(f)
 
     if 'about_strategy.txt' in all_files_in_selected_backtest_dir:
         with open(os.path.join(selected_backtest_dir, 'about_strategy.txt'), 'r') as f:
@@ -114,9 +118,12 @@ def run():
     left_col, right_col = st.columns([1, 2])
     with left_col:
         st.subheader("📊 Backtest Config")
-        st.json(backtest_config_dict)
+        # st.json(backtest_config_dict)
+        st.json({})
         st.subheader("📊 Strategy Config")
-        st.json(strategy_config_dict)
+        # st.json(strategy_config_dict)
+        st.json({})
+
     with right_col:
         st.subheader("📊 About Strategy")
         st.text_area("", value=about_strategy, height=400,label_visibility="collapsed")

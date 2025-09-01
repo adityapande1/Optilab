@@ -38,7 +38,8 @@ def main():
     ###########################################################################################
     ### 2. Copy the last <num_backtests_to_copy> backtest_results from Optiverse and commit ###
     ###########################################################################################
-    original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results', 'AbhisResults')
+    # original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results', 'AbhisResults')
+    original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results')
     this_dir_backtest_folder = os.path.join(this_dir, 'backtest_results')
     os.makedirs(this_dir_backtest_folder, exist_ok=True)
     # Remove all contents in the backtest results folder
