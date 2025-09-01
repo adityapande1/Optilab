@@ -10,6 +10,7 @@ import os
 from rich import print
 import pickle
 from constants import BACKTEST_RESULTS_FOLDERPATH
+import time
 
 @dataclass
 class Order:
@@ -36,7 +37,7 @@ class Order:
         assert new_status in ("pending", "filled", "cancelled", "rejected"), "invalid status"
         self.status = new_status
 
-class BackTester:
+class BackTesterFast:
     '''
     BackTester is responsible to keep track of the metrics.
     '''
@@ -452,38 +453,65 @@ class BackTester:
         return stoploss_actions
 
     def run(self) -> dict:
-    
+
+        time_dict = {}
+        time_dict['inital_part'] = 0
+        time_dict['strategy_actions'] = 0
+        time_dict['stoploss_actions'] = 0
+        time_dict['actions_validation'] = 0
+        time_dict['metadata'] = 0
+        time_dict['trade_execution'] = 0
+        time_dict['step_metrics'] = 0
+
+        t0 = time.time()
         self.valid_timestamps = self.dbconnector.df_spot.loc[self.config.start_date : self.config.end_date].index
         self.valid_timestamps = self.valid_timestamps.sort_values()
         self.initialize_metrics(timestamps=self.valid_timestamps)
         self.backtest_code = pd.Timestamp.now().strftime("%Y-%m-%d_%H:%M:%S")
+        time_dict['inital_part'] = time.time() - t0
+
 
         for current_timestamp in tqdm(self.valid_timestamps, desc="Running Backtest", unit="timestamp"):
             if current_timestamp.date() == pd.Timestamp("2024-11-01").date():
                 continue  # Skip the timestamp for which we don't have data
-
+            
+            t0 = time.time()
             strategy_actions = self.strategy.action(current_timestamp)
-            stoploss_actions = self.get_stoploss_actions(current_timestamp)     # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
+            time_dict['strategy_actions'] += time.time() - t0
+
+            t0 = time.time()
+            #stoploss_actions = self.get_stoploss_actions(current_timestamp)     # Ask Nino : Abhi tak upar waley action self.positions mein add nai huwey hongey is that fine. I think ...
+            stoploss_actions = [] 
+            time_dict['stoploss_actions'] += time.time() - t0
+            
             actions = (strategy_actions or []) + (stoploss_actions or [])       # Python idiom !!! Pretty cool
             actions = list(set(actions))
 
+            t0 = time.time()
             if actions:
                 validated_actions = self.validate_actions(actions)                          # Checks all Action(s) with square_off_id(if not None) have corresponding filled_position in self.strategy.position
                 new_orders = self.collect_orders(validated_actions, current_timestamp)     # Converts validated_actions(list[Action]) to new_orders(list[Order]) assigning them hash, timestamp, status:'pending'
                 self.outstanding_orders.extend(new_orders)    
+            time_dict['actions_validation'] += time.time() - t0
 
-            # 3. Process the orders using process_orders function.            
+            t0 = time.time()
+            # 3. Process the orders using process_orders function.
             metadata = self.process_orders(current_timestamp)
+            time_dict['metadata'] += time.time() - t0
 
-            if actions:
-                import ipdb; ipdb.set_trace()
-
-            # 4. Inform strategy about the trade by passing the metadata of the trade.            
+            t0 = time.time()
+            # 4. Inform strategy about the trade by passing the metadata of the trade.
             self.strategy.on_trade_execution(metadata, self.outstanding_orders)
+            time_dict['trade_execution'] += time.time() - t0
 
+            t0 = time.time()
             # 5. Update all the metrics for the time step by calling the update_metrics function.            
             self.update_step_metrics(current_timestamp, metadata, self.valid_timestamps)
+            time_dict['step_metrics'] += time.time() - t0
 
+        
+        import ipdb; ipdb.set_trace()
+        
         # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.        
         self.update_final_metrics()
 

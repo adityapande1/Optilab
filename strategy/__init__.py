@@ -55,6 +55,14 @@ class Action:
         if self.order_type == "limit":
             self.key += f"__limit_price={round(self.limit_price, 6)}"
 
+    def __hash__(self):
+        return hash(self.key)
+
+    def __eq__(self, other):
+        if not isinstance(other, Action):
+            return False
+        return self.key == other.key
+
     def split(self):
         """Return a list of Actions with num_lots=1, lot_type='split', and unique lot_idx."""
         if self.num_lots <= 1:
