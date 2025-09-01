@@ -46,11 +46,12 @@ class Parser:
         self.parser.add_argument("--start_date", type=str, default="2024-01-01", metavar="YYYY-MM-DD", help="Backtest start date")
         self.parser.add_argument("--end_date", type=str, default="2025-07-31", metavar="YYYY-MM-DD", help="Backtest end date")
         self.parser.add_argument("--transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees")
+        self.parser.add_argument("--results_dir", type=str, required=False, metavar="FOLDER NAME", help="Directory to save backtest results")
         # Common strategy configuration
         self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
         self.parser.add_argument("--entry_time", type=str, default="9:15:00", metavar="HH:MM:SS", help="Time to enter positions each day")
         self.parser.add_argument("--exit_time", type=str, default="15:20:00", metavar="HH:MM:SS", help="Time to forcefully exit all positions each day")
-        self.parser.add_argument("--lot_size", type=int, default=75, help="Lot size for trading")
+        self.parser.add_argument("--lot_size", type=int, default=75, help="Lot size for trading")      
         # ------------------
 
         # --- Straddle args ---
@@ -73,6 +74,7 @@ class Parser:
         return ReadOnlyConfig({
             "start_date": pd.Timestamp(self.args.start_date),
             "end_date": pd.Timestamp(self.args.end_date),
+            "results_dir": self.args.results_dir,
             "transaction_cost": self.args.transaction_cost
         })
 

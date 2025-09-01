@@ -337,34 +337,39 @@ class BackTester:
         
         self.df_portfolio_metrics['pnl'] = self.df_portfolio_metrics['interval_pnl'].cumsum()
 
-    def save_results(self, save_dir: str = None):
+    def save_results(self, foldername: str = None):
         '''Saves the backtest results to the specified directory'''
 
-        save_dir = os.path.join(BACKTEST_RESULTS_FOLDERPATH, f"{self.strategy.name}__{self.backtest_code}") if save_dir is None else save_dir
-        os.makedirs(save_dir, exist_ok=True)
+        folder_path = os.path.join(BACKTEST_RESULTS_FOLDERPATH, f"{self.strategy.name}__{self.backtest_code}" if foldername is None else foldername)
+        os.makedirs(folder_path, exist_ok=True)
 
         strategy_config_dict = self.strategy.config.as_dict()
-        with open(os.path.join(save_dir, "strategy_config.pkl"), "wb") as f:
+        with open(os.path.join(folder_path, "strategy_config.pkl"), "wb") as f:
             pickle.dump(strategy_config_dict, f)
 
         backtester_config_dict = self.config.as_dict()
-        with open(os.path.join(save_dir, "backtester_config.pkl"), "wb") as f:
+        with open(os.path.join(folder_path, "backtester_config.pkl"), "wb") as f:
             pickle.dump(backtester_config_dict, f)
 
+        self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
+
+        positions_folder = os.path.join(folder_path, "positions")
+        os.makedirs(positions_folder, exist_ok=True)
         for hash, df_position in self.hash2position_dfs.items():    # Save df_position
-            df_position.to_parquet(os.path.join(save_dir, f"df_position_{hash}.parquet"))
-        self.df_portfolio_metrics.to_parquet(os.path.join(save_dir, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
-        
-        if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):   # Save about strategy if about() function implemented
-            with open(os.path.join(save_dir, "about_strategy.txt"), "w") as f:
-                f.write(self.strategy.about())
-        
+            df_position.to_parquet(os.path.join(positions_folder, f"df_position_{hash}.parquet"))
+
+
+        actions_folder = os.path.join(folder_path, "actions")
+        os.makedirs(actions_folder, exist_ok=True)
         # Position tally data
         for hash, position_dict in self.strategy.position_tally.items():
-            position_dict['opened']['action'].save(savedir=save_dir, filename=f"action_{hash}.json")
-        
-        print(f"Backtest results saved to {save_dir}")
+            position_dict['opened']['action'].save(savedir=actions_folder, filename=f"action_{hash}.json")
 
+        if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):   # Save about strategy if about() function implemented
+            with open(os.path.join(folder_path, "about_strategy.txt"), "w") as f:
+                f.write(self.strategy.about())
+
+        print(f"Backtest results saved to {folder_path}\n")
 
     def update_stoploss_price_level(self, pos: dict, timestamp: pd.Timestamp):
         """
@@ -475,8 +480,8 @@ class BackTester:
             # 3. Process the orders using process_orders function.            
             metadata = self.process_orders(current_timestamp)
 
-            if actions:
-                import ipdb; ipdb.set_trace()
+            # if actions:
+            #     import ipdb; ipdb.set_trace()
 
             # 4. Inform strategy about the trade by passing the metadata of the trade.            
             self.strategy.on_trade_execution(metadata, self.outstanding_orders)
