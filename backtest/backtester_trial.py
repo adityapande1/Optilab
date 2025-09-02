@@ -298,6 +298,27 @@ class BackTester:
             if (tally_dict['closed'] is not None) and (hash not in self.already_initialized_position_hashes):    # meaning the open position has been closed and df_position can now be completely made
                 df_position = self.create_df_position(tally_dict, hash, valid_timestamps)
                 self.hash2position_dfs[hash] = df_position
+    
+    def _update_final_metric_interval_pnl(self):
+        for hash, df_position in self.hash2position_dfs.items():
+            if df_position is not None:
+                position = self.strategy.position_tally[hash]['opened']['action'].trade_type
+                df_position['interval_pnl'] = df_position['price'].diff() * self.strategy.config.lot_size
+                # if trade_type is "short" Then do - interval pnl
+                if position == "short":
+                    df_position['interval_pnl'] = -df_position['interval_pnl']
+                
+    def _update_final_metric_pnl(self):
+        for hash, df_position in self.hash2position_dfs.items():
+            if df_position is not None:
+                df_position['pnl'] = df_position['interval_pnl'].cumsum()
+                df_position.at[df_position.index[0], "pnl"] = -self.config.per_lot_transaction_cost * self.strategy.config.lot_size
+
+    def _update_final_metric_max_drawdown(self):
+        for hash, df_position in self.hash2position_dfs.items():
+            running_max = df_position["pnl"].cummax()
+            drawdown = running_max - df_position["pnl"]
+            df_position["max_drawdown"] = drawdown.cummax()
 
     def update_final_metrics(self):
 
@@ -313,6 +334,25 @@ class BackTester:
         
         # Compute cumulative PnL
         self.df_portfolio_metrics['pnl'] = self.df_portfolio_metrics['net_step_pnl'].cumsum()
+
+        
+
+
+        # self._update_final_metric_interval_pnl()
+        # self._update_final_metric_pnl()
+        # self._update_final_metric_max_drawdown()
+        # self._update_final_portfolio_metrics()
+
+    def _update_final_portfolio_metrics(self):
+
+        for timestamp in tqdm(self.df_portfolio_metrics.index, desc="Updating Portfolio Metrics", unit="timestamp"):
+            total = 0
+            for hash, df_position in self.hash2position_dfs.items():
+                if timestamp in df_position.index:
+                    total += df_position.loc[timestamp, 'interval_pnl']
+            self.df_portfolio_metrics.at[timestamp, 'interval_pnl'] = total
+        
+        self.df_portfolio_metrics['pnl'] = self.df_portfolio_metrics['interval_pnl'].cumsum()
 
     def save_results(self, foldername: str = None):
         '''Saves the backtest results to the specified directory'''
@@ -466,5 +506,7 @@ class BackTester:
         # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.        
         self.update_final_metrics()
 
+        import ipdb; ipdb.set_trace()
 
+        print("HEHE")
 

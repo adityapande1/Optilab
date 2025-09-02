@@ -45,7 +45,7 @@ class Parser:
         # Backtest configuration
         self.parser.add_argument("--start_date", type=str, default="2024-01-01", metavar="YYYY-MM-DD", help="Backtest start date")
         self.parser.add_argument("--end_date", type=str, default="2025-07-31", metavar="YYYY-MM-DD", help="Backtest end date")
-        self.parser.add_argument("--transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees")
+        self.parser.add_argument("--per_lot_transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)")
         self.parser.add_argument("--results_dir", type=str, required=False, metavar="FOLDER NAME", help="Directory to save backtest results")
         # Common strategy configuration
         self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
@@ -75,7 +75,7 @@ class Parser:
             "start_date": pd.Timestamp(self.args.start_date),
             "end_date": pd.Timestamp(self.args.end_date),
             "results_dir": self.args.results_dir,
-            "transaction_cost": self.args.transaction_cost
+            "per_lot_transaction_cost": self.args.per_lot_transaction_cost
         })
 
     # --- Config getters ---
