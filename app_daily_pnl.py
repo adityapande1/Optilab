@@ -1,11 +1,28 @@
+import json
 import streamlit as st
 import os
 from utils.data_utils import read_parquet_data
-from optilab_constants import BACKTEST_DIR
+from optilab_constants import BACKTEST_RESULTS_FOLDERPATH
+from backtest.backtest_analyzer import BacktestAnalyzer
 import pandas as pd
-import pickle
 import streamlit as st
 import plotly.graph_objects as go
+
+# Define a reusable box style
+box_style = """
+    <div style="
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    ">
+        <h3 style="color: #333; margin-bottom: 8px;">{title}</h3>
+        <p style="font-size: 28px; font-weight: bold; color: #da1a78; text-align: center;">
+            {value}
+        </p>
+    </div>
+"""
 
 def stem_plot(df, colname="daily_pnl"):
     fig = go.Figure()
@@ -62,98 +79,74 @@ def stem_plot(df, colname="daily_pnl"):
 
     return fig
 
-@st.cache_data
-def _all_files_in_directory(directory):
-    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
-
-@st.cache_data
-def _get_backtest_dataframes(backtest_dir):
-
-    # Load all DataFrames from the backtest directory
-    hash2position_dfs, df_portfolio_metrics = {}, None
-    all_parquet_dfs = [f for f in os.listdir(backtest_dir) if f.endswith(".parquet")]
-
-    for df_filename in all_parquet_dfs:
-        if df_filename.startswith("df_position") and df_filename.endswith(".parquet"):
-            hash_value = df_filename[len("df_position_"):-len(".parquet")]
-            hash2position_dfs[int(hash_value)] = read_parquet_data(os.path.join(backtest_dir, df_filename))
-        elif df_filename == "df_portfolio_metrics.parquet":
-            df_portfolio_metrics = read_parquet_data(os.path.join(backtest_dir, df_filename))
-
-    return hash2position_dfs, df_portfolio_metrics
-
 def run():
-    st.markdown("---\n# Daily P&L Analysis\n---")
-    # BACKTEST_DIR_NEW = '../OptiverseDelete/backtest_results_old/'
-    backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR)])
-    print(backtest_strategy_ts_codes)
-    # backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR_NEW) if '.DS_Store' not in f])
+    cols = st.columns([7, 1])
+    with cols[0]:
+        st.markdown("---\n# Daily P&L Analysis \n---")
+    with cols[1]:
+        st.image("./metadata/daily_pnl/spinning_bear.gif", width=200)
+
+    backtest_foldernames = sorted([f for f in os.listdir(BACKTEST_RESULTS_FOLDERPATH) if os.path.isdir(os.path.join(BACKTEST_RESULTS_FOLDERPATH, f))])
 
     st.sidebar.subheader("Backtest Selection")
-    # A dropdown to select a backtest code
-    selected_backtest_strategy_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_strategy_ts_codes, index=0)
-    selected_backtest_dir = f"{BACKTEST_DIR}/{selected_backtest_strategy_ts_code}"
-    all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
-    
-    # assert 'strategy_config.pkl' in all_files_in_selected_backtest_dir
-    # assert 'backtester_config.pkl' in all_files_in_selected_backtest_dir
-    # strategy_config_path = os.path.join(selected_backtest_dir, 'strategy_config.pkl')
-    # backtest_config_path = os.path.join(selected_backtest_dir, 'backtester_config.pkl')
-    # # Read pkl file
-    
+    selected_backtest_folder_name = st.sidebar.selectbox("Select a backtest code", backtest_foldernames, index=0)
 
-    # with open(backtest_config_path, 'rb') as f:
-    #     backtest_config_dict = pickle.load(f)
+    backtest_analyzer = BacktestAnalyzer(
+        backtest_results_dir=BACKTEST_RESULTS_FOLDERPATH,
+        backtest_folder_name=selected_backtest_folder_name
+    )
 
-    # with open(strategy_config_path, 'rb') as f:
-    #     strategy_config_dict = pickle.load(f)
+    ############################
+    #### CONFIGS and ABOUT #####
+    ############################
 
-    if 'about_strategy.txt' in all_files_in_selected_backtest_dir:
-        with open(os.path.join(selected_backtest_dir, 'about_strategy.txt'), 'r') as f:
-            about_strategy = f.read()
-    else:
-        about_strategy = "No information available"
+    strategy_config = backtest_analyzer.get_strategy_config()
+    backtester_config = backtest_analyzer.get_backtester_config()
+    about_strategy = backtest_analyzer.get_about()
 
     # Two main columns: left (configs), right (about)
-    left_col, right_col = st.columns([1, 2])
+    left_col, right_col = st.columns([1, 3])
     with left_col:
         st.subheader("📊 Backtest Config")
-        # st.json(backtest_config_dict)
-        st.json({})
+        st.write(backtester_config)
         st.subheader("📊 Strategy Config")
-        # st.json(strategy_config_dict)
-        st.json({})
+        st.write(strategy_config)
 
     with right_col:
         st.subheader("📊 About Strategy")
-        st.text_area("", value=about_strategy, height=400,label_visibility="collapsed")
+        rows_left = len(backtester_config) + len(strategy_config) + 5
+        st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
     st.markdown("---")
-
-    hash2position_dfs, df_portfolio_metrics = _get_backtest_dataframes(selected_backtest_dir)
     
+    ############################
+    ############################
+
+    ############################
+    #### Portfolio Metrics #####
+    ############################
+
     # EOD metrics
+    df_portfolio_metrics = backtest_analyzer.get_df_portfolio_metrics()
     assert 'pnl' in df_portfolio_metrics.columns
     df_portfolio_metrics.sort_index(inplace=True)
-    df_metrics_eod = df_portfolio_metrics[df_portfolio_metrics.index.time == pd.Timestamp("15:29:00").time()].copy()
-    df_metrics_eod['daily_pnl'] = df_metrics_eod['pnl'].diff().values
-    df_metrics_eod.iloc[0, df_metrics_eod.columns.get_loc('daily_pnl')] = df_metrics_eod['pnl'].iloc[0]
+    df_portfolio_metrics_eod = df_portfolio_metrics[df_portfolio_metrics.index.time == pd.Timestamp("15:29:00").time()].copy()
+    df_portfolio_metrics_eod['daily_pnl'] = df_portfolio_metrics_eod['pnl'].diff().values
+    df_portfolio_metrics_eod.iloc[0, df_portfolio_metrics_eod.columns.get_loc('daily_pnl')] = df_portfolio_metrics_eod['pnl'].iloc[0]
+
 
     if df_portfolio_metrics is not None:
-        first_bt_date, last_bt_date = df_portfolio_metrics.index.min().strftime("%Y-%m-%d"), df_portfolio_metrics.index.max().strftime("%Y-%m-%d")
         all_bt_dates = sorted(list(set(df_portfolio_metrics.index.strftime("%Y-%m-%d").tolist())))
 
-        st.sidebar.subheader("Start PnL Date")
+        st.sidebar.subheader("Start Backtest Date")
         initial_backtest_date = st.sidebar.selectbox("Select Initial Backtest Date", all_bt_dates, index=0)
-        # st.sidebar.write(f"**Initial Backtest Date:** {initial_backtest_date}")
 
         # select date in sidebar
-        st.sidebar.subheader("End PnL Date")
+        st.sidebar.subheader("End Backtest Date")
         final_backtest_dates = [d for d in all_bt_dates if d >= initial_backtest_date]
         final_backtest_date = st.sidebar.selectbox("Select Final Backtest Date", final_backtest_dates, index=len(final_backtest_dates)-1)
-        # st.sidebar.write(f"**Final Backtest Date:** {final_backtest_date}")
 
         # Filter the DataFrames based on the selected dates
-        df_metrics_filtered = df_metrics_eod[(df_metrics_eod.index >= initial_backtest_date) & (df_metrics_eod.index <= final_backtest_date)]
+        df_portfolio_metrics_filtered = df_portfolio_metrics_eod[(df_portfolio_metrics_eod.index >= initial_backtest_date) & (df_portfolio_metrics_eod.index <= final_backtest_date)]
 
         with st.sidebar:
             st.header("📅 Select Days")
@@ -163,34 +156,41 @@ def run():
             thu = st.toggle("Thursday", value=True)
             fri = st.toggle("Friday", value=True)
 
-        # Example usage
+        # Select days
         selected_days = [day for day, enabled in zip(
             ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
             [mon, tue, wed, thu, fri]
         ) if enabled]
 
-        df_metrics_filtered = df_metrics_filtered[df_metrics_filtered.index.day_name().isin(selected_days)].copy()
-        num_unique_days = len(df_metrics_filtered.index.normalize().unique())
-        total_daily_pnl = df_metrics_filtered['daily_pnl'].sum()
-        top_five_losses = df_metrics_filtered.nsmallest(5, 'daily_pnl')
-        top_five_profits = df_metrics_filtered.nlargest(5, 'daily_pnl')
+        df_portfolio_metrics_filtered = df_portfolio_metrics_filtered[df_portfolio_metrics_filtered.index.day_name().isin(selected_days)].copy()
+        num_unique_days = len(df_portfolio_metrics_filtered.index.normalize().unique())
+        total_daily_pnl = df_portfolio_metrics_filtered['daily_pnl'].sum()
+        top_eight_losses = df_portfolio_metrics_filtered.nsmallest(8, 'daily_pnl')
+        top_eight_profits = df_portfolio_metrics_filtered.nlargest(8, 'daily_pnl')
+
+        # Columns layout
         col1, col2, col3 = st.columns([1, 2.5, 1])
+
         with col1:
-            st.subheader(f"Total PnL: {total_daily_pnl:.2f}")
+            st.markdown(box_style.format(title="Total P&L", value=f"{total_daily_pnl:.2f}"), unsafe_allow_html=True)
+
         with col2:
-            st.subheader(f"Selected Days : {', '.join(selected_days)}")
+            st.markdown(box_style.format(title="Selected Days", value=", ".join(selected_days)), unsafe_allow_html=True)
+
         with col3:
-            st.subheader(f"Total Days: {num_unique_days}")
+            st.markdown(box_style.format(title="Total Days", value=num_unique_days), unsafe_allow_html=True)
 
-
-        # Example usage
-        fig = stem_plot(df_metrics_filtered, colname="daily_pnl")
+        # Stem Plot
+        fig = stem_plot(df_portfolio_metrics_filtered, colname="daily_pnl")
         st.plotly_chart(fig, use_container_width=True)
         
         col1, col2 = st.columns(2)
         with col1:
-            st.subheader("Top 5 Daily Losses")
-            st.write(top_five_losses[['daily_pnl']])
+            st.subheader("Top 8 Daily Losses")
+            st.write(top_eight_losses[['daily_pnl']])
         with col2:
-            st.subheader("Top 5 Daily Profits")
-            st.write(top_five_profits[['daily_pnl']])
+            st.subheader("Top 8 Daily Profits")
+            st.write(top_eight_profits[['daily_pnl']])
+
+    ############################
+    ############################

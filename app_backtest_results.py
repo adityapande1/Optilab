@@ -6,7 +6,7 @@ from utils.data_utils import read_parquet_data
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from optilab_constants import BACKTEST_DIR
+from optilab_constants import BACKTEST_RESULTS_FOLDERPATH
 
 @st.cache_data
 def _all_files_in_directory(directory):
@@ -103,11 +103,11 @@ def run():
     # BACKTEST_DIR = "./backtest_results"
     st.markdown("---\n# Backtest Results Analysis\n---")
 
-    backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_DIR)])
+    backtest_strategy_ts_codes = sorted([f for f in os.listdir(BACKTEST_RESULTS_FOLDERPATH)])
     st.sidebar.subheader("Backtest Selection")
     # A dropdown to select a backtest code
     selected_backtest_strategy_ts_code = st.sidebar.selectbox("Select a backtest code", backtest_strategy_ts_codes, index=0)
-    selected_backtest_dir = f"{BACKTEST_DIR}/{selected_backtest_strategy_ts_code}"
+    selected_backtest_dir = f"{BACKTEST_RESULTS_FOLDERPATH}/{selected_backtest_strategy_ts_code}"
     all_files_in_selected_backtest_dir = _all_files_in_directory(selected_backtest_dir)
     # assert 'backtest_config.json' in all_files_in_selected_backtest_dir
     # assert 'strategy_config.json' in all_files_in_selected_backtest_dir
