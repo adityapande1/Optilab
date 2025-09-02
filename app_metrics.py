@@ -8,6 +8,7 @@ def run():
     with open("./docs/metrics.md", "r", encoding="utf-8") as f:
         md_text = f.read()
 
+
     # Convert Markdown to HTML
     html_content = markdown.markdown(md_text, extensions=["fenced_code", "tables"])
 
