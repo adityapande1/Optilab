@@ -67,6 +67,9 @@ def main():
     for backtest in all_backtest:
         src = os.path.join(original_backtest_folder, backtest)
         dest = os.path.join(this_dir_backtest_folder, backtest)
+        # Skip if not a directory (e.g. .DS_Store)
+        if not os.path.isdir(src):
+            continue
         shutil.copytree(src, dest, dirs_exist_ok=True)  # overwrite if exists
         os.system(f"git add 'backtest_results/{backtest}'")
 
