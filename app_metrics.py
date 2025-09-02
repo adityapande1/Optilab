@@ -1,10 +1,23 @@
 import streamlit as st
+import markdown
+from streamlit.components.v1 import html
 
 def run():
 
-    # Read markdown file
-    with open("./docs/metrics.md", "r") as f:
-        md_content = f.read()
+    # Load Markdown file
+    with open("./docs/metrics.md", "r", encoding="utf-8") as f:
+        md_text = f.read()
+
+    # Convert Markdown to HTML
+    html_content = markdown.markdown(md_text, extensions=["fenced_code", "tables"])
+
+    # Add GitHub-like styling, full width
+    styled_html = f"""
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    <article class="markdown-body" style="padding: 2rem; width: 100%; box-sizing: border-box;">
+    {html_content}
+    </article>
+    """
 
     # Display in Streamlit
-    st.markdown(md_content, unsafe_allow_html=True)
+    html(styled_html, height=800, scrolling=True)
