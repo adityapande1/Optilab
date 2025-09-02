@@ -24,6 +24,21 @@ box_style = """
     </div>
 """
 
+box_style_small = """
+    <div style="
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    ">
+        <h5 style="color: #333; margin-bottom: 8px;">{title}</h5>
+        <p style="font-size: 18px; font-weight: bold; color: #da1a78; text-align: center;">
+            {value}
+        </p>
+    </div>
+"""
+
 def stem_plot(df, colname="daily_pnl"):
     fig = go.Figure()
 
@@ -117,7 +132,16 @@ def run():
         rows_left = len(backtester_config) + len(strategy_config) + 5
         st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
     st.markdown("---")
-    
+
+    st.write("#### Backtesteter Config")
+    cols = st.columns([1]*len(backtester_config))
+    for col, (key, val) in zip(cols, backtester_config.items()):
+        col.markdown(box_style_small.format(title=key, value=val), unsafe_allow_html=True)
+    st.write("### Strategy Config")
+    cols = st.columns([1]*len(strategy_config))
+    for col, (key, val) in zip(cols, strategy_config.items()):
+        col.markdown(box_style_small.format(title=key, value=val), unsafe_allow_html=True)
+
     ############################
     ############################
 
@@ -169,8 +193,8 @@ def run():
         top_eight_profits = df_portfolio_metrics_filtered.nlargest(8, 'daily_pnl')
 
         # Columns layout
+        st.write("### P&L Stats")
         col1, col2, col3 = st.columns([1, 2.5, 1])
-
         with col1:
             st.markdown(box_style.format(title="Total P&L", value=f"{total_daily_pnl:.2f}"), unsafe_allow_html=True)
 
@@ -179,6 +203,7 @@ def run():
 
         with col3:
             st.markdown(box_style.format(title="Total Days", value=num_unique_days), unsafe_allow_html=True)
+
 
         # Stem Plot
         fig = stem_plot(df_portfolio_metrics_filtered, colname="daily_pnl")

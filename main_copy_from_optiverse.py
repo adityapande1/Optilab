@@ -15,6 +15,7 @@ def main():
         os.path.join(optiverse_dir, 'utils'),
         os.path.join(optiverse_dir, 'strategy'),
         os.path.join(optiverse_dir, 'backtest'),
+        os.path.join(optiverse_dir, 'docs'),
     ]
     folders_copied = []
     for folder in folders_to_copy_from_optiverse:

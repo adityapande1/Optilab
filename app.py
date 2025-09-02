@@ -3,6 +3,7 @@ from app_backtest_results import run as run_backtest_results
 from app_straddle_tweaker import run as run_straddle_tweaker
 from app_home import run as run_home    
 from app_daily_pnl import run as run_daily_pnl    
+from app_metrics import run as run_metrics
 
 # --- Wide page setting filling complete window ---
 st.set_page_config(
@@ -47,13 +48,14 @@ st.markdown(
 )
 
 # --- Navigation buttons (side by side with small gap) ---
-state_names = ["Home", "Analyze Backtest Results", "Daily PnL", "Straddle Tweaker"]
-button_names = ["btn_home", "btn_analyze_backtest_results", "btn_daily_pnl", "btn_straddle_tweaker"]
+state_names = ["Home", "Analyze Backtest Results", "Daily PnL", "Straddle Tweaker", "Metrics"]
+button_names = ["btn_home", "btn_analyze_backtest_results", "btn_daily_pnl", "btn_straddle_tweaker", "btn_metrics"]
 page_functions = {
     "Home": run_home,
     "Analyze Backtest Results": run_backtest_results,
     "Daily PnL": run_daily_pnl,
     "Straddle Tweaker": run_straddle_tweaker,
+    "Metrics": run_metrics,
 }
 
 # Added somment git
