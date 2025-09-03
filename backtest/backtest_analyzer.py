@@ -1,5 +1,5 @@
 """
-Analyzes the backtest results 
+Analyzes the any backtest result folder and provides easy access to the data and metadata.
 """
 
 import os

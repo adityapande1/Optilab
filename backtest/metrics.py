@@ -2,7 +2,7 @@
 Mostly contains the functions used in evaluating backtest strategies.
 """
 import pandas as pd
-
+from backtest.backtest_analyzer import BacktestAnalyzer
 
 def update_metric_pnl(
     df: pd.DataFrame,
@@ -34,8 +34,35 @@ def update_metric_pnl(
     df.loc[:, 'pnl'] = df['net_step_pnl'].cumsum()
 
 
+class MetricEngine:
+    def __init__(self, btanalyzer: BacktestAnalyzer, initial_capital: float):
+        self.btanalyzer = btanalyzer
+        self.initial_capital = initial_capital
+        self.df_portfolio_metrics = self.btanalyzer.get_df_portfolio_metrics()
+        self.df_portfolio_metrics_daily = self.make_daily_df(self.df_portfolio_metrics, self.initial_capital)
+
+    def make_daily_df(self, df: pd.DataFrame, initial_capital: float) -> pd.DataFrame:
+
+        assert 'pnl' in df.columns, "DataFrame must contain 'pnl' column"
+        portfolio_value = initial_capital + df['pnl']
+        df_daily = (
+            portfolio_value
+            .resample('1D')               # (1) group data into 1-day buckets
+            .last()                       # (2) pick the last value in each day (EOD portfolio value)
+            .dropna()                     # (3) remove days that don’t have any data (holidays, weekends, etc.)
+            .to_frame('portfolio_value')  # (4) turn the Series back into a DataFrame with this column name
+        )
+
+        # daily returns with initial capital as baseline
+        df_daily['daily_return'] = df_daily['portfolio_value'].pct_change()
+        first_day_return = (df_daily['portfolio_value'].iloc[0] - initial_capital) / initial_capital
+        df_daily.loc[df_daily.index[0], 'daily_return'] = first_day_return
+        return df_daily
 
 
+    def get_all_metrics(self):
+
+        pass
 
 
 
