@@ -104,6 +104,15 @@ class MetricEngine:
         }
 
 
+        # Drawdown details
+        dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
+        dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown',ascending=True)
+        self.metrics['df_drawdown'] = {
+            'help':'Detailed statistics about drawdowns, including duration and recovery time.',
+            'value': dd_details
+        }
+
+
 
 
 
