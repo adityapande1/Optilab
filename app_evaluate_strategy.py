@@ -271,9 +271,13 @@ def run():
 
     col_df_drawdown, col_plot_drawdown = st.columns([1, 2])
     with col_df_drawdown:
-        pass
+        # Write dataframe
+        st.dataframe(df_portfolio_metrics_daily.style.format({
+            'portfolio_value': '₹{:.2f}',
+            'daily_return': '{:.4%}'
+        }), height=400)
     with col_plot_drawdown:
-        qs.plots.d
+        pass
 
 
 
