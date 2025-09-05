@@ -64,18 +64,64 @@ class MetricEngine:
 
 
     def _update_all_metrics(self):
-        
 
-        self.metrics['max_drawdown'] = qs.stats.max_drawdown(self.df_portfolio_metrics_daily['daily_return'])
-        self.metrics['sharpe_ratio'] = float(qs.stats.sharpe(self.df_portfolio_metrics_daily['daily_return']))
-        self.metrics['sortino_ratio'] = float(qs.stats.sortino(self.df_portfolio_metrics_daily['daily_return']))
-        self.metrics['var_95'] = float(qs.stats.value_at_risk(self.df_portfolio_metrics_daily['daily_return'], confidence=0.95))
-        self.metrics['recover_factor'] = float(qs.stats.recovery_factor(self.df_portfolio_metrics_daily['daily_return']))
-        self.metrics['payoff_ratio'] = float(qs.stats.payoff_ratio(self.df_portfolio_metrics_daily['daily_return']))
+        # Day Count & Trade Count Metrics
+        self.metrics['total_days'] = {
+            'help':'Total number of trading days',
+            'value': len(self.df_portfolio_metrics_daily.index.normalize().unique())
+        }
+        self.metrics['positive_days'] = {
+            'help':'Number of days with positive returns',
+            'value': (self.df_portfolio_metrics_daily['daily_return'] > 0).sum()
+        }
+        self.metrics['negative_days'] = {
+            'help':'Number of days with negative returns (including zero return days)',
+            'value': (self.df_portfolio_metrics_daily['daily_return'] <= 0).sum()
+        }
+        self.metrics['win_rate'] = {
+            'help':'The ratio of positive returns to total non-zero returns, providing a measure of how often the strategy generates profits.',
+            'value': qs.stats.win_rate(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['win_loss_ratio'] = {
+            'help' : ' (average win / average loss) : The ratio of average winning returns to average losing returns, providing insight into the reward-to-risk profile of individual trades or periods.',
+            'value': qs.stats.win_loss_ratio(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['max_win_streak'] = {
+            'help':'Maximum number of consecutive winning periods. The longest streak of positive returns, which helps assess the consistency of positive performance.',
+            'value': qs.stats.consecutive_wins(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['max_loss_streak'] = {
+            'help':'Maximum number of consecutive losing periods. The longest streak of negative returns, which helps assess the risk of prolonged drawdowns.',
+            'value': qs.stats.consecutive_losses(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['highest_return'] = {
+            'help':'Best (highest) daily return',
+            'value': qs.stats.best(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['lowest_return'] = {
+            'help':'Worst (lowest) daily return',
+            'value': qs.stats.worst(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
 
-        dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
-        dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown',ascending=True)
-        self.metrics['drawdown_details'] = dd_details
+
+
+
+
+        # self.metrics['total_days'] = len(self.df_portfolio_metrics_daily.index.normalize().unique())  # total number of unique days in the backtest
+        # self.metrics['win_ratio'] = qs.stats.win_rate(returns=self.df_portfolio_metrics_daily['daily_return'])            # fraction of positive days
+        # self.metrics['max_win_streak'] = qs.stats.consecutive_wins(returns=self.df_portfolio_metrics_daily['daily_return'])    # longest win streak
+        # self.metrics['max_loss_streak'] = qs.stats.consecutive_losses(returns=self.df_portfolio_metrics_daily['daily_return'])  # longest loss streak
+        # self.metrics['avg_win'] = qs.stats.avg_win(returns=self.df_portfolio_metrics_daily['daily_return'])             # mean of positive returns
+        # self.metrics['avg_loss'] = qs.stats.avg_loss(returns=self.df_portfolio_metrics_daily['daily_return'])            # mean of negative returns
+        # self.metrics['win_loss_ratio'] = qs.stats.win_loss_ratio(returns=self.df_portfolio_metrics_daily['daily_return'])      # avg win / avg loss
+
+        # self.metrics['var_95'] = float(qs.stats.value_at_risk(self.df_portfolio_metrics_daily['daily_return'], confidence=0.95))
+        # self.metrics['recover_factor'] = float(qs.stats.recovery_factor(self.df_portfolio_metrics_daily['daily_return']))
+        # self.metrics['payoff_ratio'] = float(qs.stats.payoff_ratio(self.df_portfolio_metrics_daily['daily_return']))
+
+        # dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
+        # dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown',ascending=True)
+        # self.metrics['drawdown_details'] = dd_details
 
 
 
