@@ -49,13 +49,15 @@ st.markdown(
 )
 
 # --- Navigation buttons (side by side with small gap) ---
-state_names = ["Home", "Analyze Backtest Results", "Daily PnL", "Straddle Tweaker", "Evaluate Strategy", "Compare Strategies", "Metrics"]
-button_names = ["btn_home", "btn_analyze_backtest_results", "btn_daily_pnl", "btn_straddle_tweaker", "btn_evaluate_strategy", "btn_compare_strategies", "btn_metrics"]
+# state_names = ["Home", "Analyze Backtest Results", "Daily PnL", "Straddle Tweaker", "Evaluate Strategy", "Compare Strategies", "Metrics"]
+# button_names = ["btn_home", "btn_analyze_backtest_results", "btn_daily_pnl", "btn_straddle_tweaker", "btn_evaluate_strategy", "btn_compare_strategies", "btn_metrics"]
+state_names = ["Home", "Daily PnL", "Evaluate Strategy", "Compare Strategies", "Metrics"]
+button_names = ["btn_home", "btn_daily_pnl", "btn_evaluate_strategy", "btn_compare_strategies", "btn_metrics"]
 page_functions = {
     "Home": run_home,
-    "Analyze Backtest Results": run_backtest_results,
+    # "Analyze Backtest Results": run_backtest_results,
     "Daily PnL": run_daily_pnl,
-    "Straddle Tweaker": run_straddle_tweaker,
+    # "Straddle Tweaker": run_straddle_tweaker,
     "Evaluate Strategy": run_evaluate_strategy,
     "Compare Strategies": run_compare_stratergies,
     "Metrics": run_metrics

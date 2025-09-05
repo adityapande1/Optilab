@@ -115,8 +115,8 @@ def run():
     #### CONFIGS and ABOUT #####
     ############################
 
-    strategy_config = backtest_analyzer.get_strategy_config()
-    backtester_config = backtest_analyzer.get_backtester_config()
+    strategy_config = backtest_analyzer.get_strategy_config().as_dict()
+    backtester_config = backtest_analyzer.get_backtester_config().as_dict()
     about_strategy = backtest_analyzer.get_about()
 
     # Two main columns: left (configs), right (about)
