@@ -3,6 +3,7 @@ Mostly contains the functions used in evaluating backtest strategies.
 """
 import pandas as pd
 from backtest.backtest_analyzer import BacktestAnalyzer
+import quantstats as qs  
 
 def update_metric_pnl(
     df: pd.DataFrame,
@@ -40,6 +41,8 @@ class MetricEngine:
         self.initial_capital = initial_capital
         self.df_portfolio_metrics = self.btanalyzer.get_df_portfolio_metrics()
         self.df_portfolio_metrics_daily = self.make_daily_df(self.df_portfolio_metrics, self.initial_capital)
+        self.metrics = {}
+        self._update_all_metrics()
 
     def make_daily_df(self, df: pd.DataFrame, initial_capital: float) -> pd.DataFrame:
 
@@ -60,9 +63,24 @@ class MetricEngine:
         return df_daily
 
 
-    def get_all_metrics(self):
+    def _update_all_metrics(self):
+        
 
-        pass
+        self.metrics['max_drawdown'] = qs.stats.max_drawdown(self.df_portfolio_metrics_daily['daily_return'])
+        self.metrics['sharpe_ratio'] = float(qs.stats.sharpe(self.df_portfolio_metrics_daily['daily_return']))
+        self.metrics['sortino_ratio'] = float(qs.stats.sortino(self.df_portfolio_metrics_daily['daily_return']))
+        self.metrics['var_95'] = float(qs.stats.value_at_risk(self.df_portfolio_metrics_daily['daily_return'], confidence=0.95))
+        self.metrics['recover_factor'] = float(qs.stats.recovery_factor(self.df_portfolio_metrics_daily['daily_return']))
+        self.metrics['payoff_ratio'] = float(qs.stats.payoff_ratio(self.df_portfolio_metrics_daily['daily_return']))
 
+        dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
+        dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown',ascending=True)
+        self.metrics['drawdown_details'] = dd_details
+
+
+
+        
+
+    
 
 

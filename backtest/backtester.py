@@ -11,6 +11,7 @@ from rich import print
 import pickle
 from constants import BACKTEST_RESULTS_FOLDERPATH
 from backtest.metrics import update_metric_pnl
+from utils.data_utils import generate_positive_hash
 
 @dataclass
 class Order:
@@ -317,34 +318,42 @@ class BackTester:
     def save_results(self, foldername: str = None):
         '''Saves the backtest results to the specified directory'''
 
+        # import ipdb; ipdb.set_trace()
+
         folder_path = os.path.join(BACKTEST_RESULTS_FOLDERPATH, f"{self.strategy.name}__{self.backtest_code}" if foldername is None else foldername)
         os.makedirs(folder_path, exist_ok=True)
 
-        strategy_config_dict = self.strategy.config.as_dict()
-        with open(os.path.join(folder_path, "strategy_config.pkl"), "wb") as f:
-            pickle.dump(strategy_config_dict, f)
+        # Configs
+        self.strategy.config.save(filepath=os.path.join(folder_path, "strategy_config.pkl"))
+        self.config.save(filepath=os.path.join(folder_path, "backtester_config.pkl"))
 
-        backtester_config_dict = self.config.as_dict()
-        with open(os.path.join(folder_path, "backtester_config.pkl"), "wb") as f:
-            pickle.dump(backtester_config_dict, f)
-
-        self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
-
+        # All positions
         positions_folder = os.path.join(folder_path, "positions")
         os.makedirs(positions_folder, exist_ok=True)
         for hash, df_position in self.hash2position_dfs.items():    # Save df_position
             df_position.to_parquet(os.path.join(positions_folder, f"df_position_{hash}.parquet"))
 
+        # final portfolio metrics
+        self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, "df_portfolio_metrics.parquet"))    # Save portfolio metrics
 
+        # All actions
         actions_folder = os.path.join(folder_path, "actions")
         os.makedirs(actions_folder, exist_ok=True)
         # Position tally data
         for hash, position_dict in self.strategy.position_tally.items():
             position_dict['opened']['action'].save(savedir=actions_folder, filename=f"action_{hash}.json")
 
+        # About if present in strategy
         if hasattr(self.strategy, "about") and callable(getattr(self.strategy, "about")):   # Save about strategy if about() function implemented
             with open(os.path.join(folder_path, "about_strategy.txt"), "w") as f:
                 f.write(self.strategy.about())
+
+        # FoldercodeHash : Generate unique str from config (strategy and backtester) for later filtering
+        foldercode_str = f"{self.strategy.config.as_str()}___{self.config.as_str()}"
+        folder_hash = generate_positive_hash(foldercode_str)
+        # Save hash in folder_hash
+        with open(os.path.join(folder_path, "folder_hash.txt"), "w") as f:
+            f.write(str(folder_hash))
 
         print(f"Backtest results saved to {folder_path}\n")
 

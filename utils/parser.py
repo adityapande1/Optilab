@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+import json
 import os
+import pickle
 import torch
 import pandas as pd
 import argparse
@@ -31,9 +33,36 @@ class ReadOnlyConfig:
     def __setattr__(self, key, value):
         raise AttributeError("ReadOnlyConfig is immutable")
 
+    # Equality check
+    def __eq__(self, other):
+        if not isinstance(other, ReadOnlyConfig):
+            return NotImplemented
+        return self._data == other._data
+
+    # === Pickle save ===
+    def save(self, filepath):
+        """Save config to a file using pickle."""
+        with open(filepath, "wb") as f:
+            pickle.dump(self._data, f)
+
     # Expose as a dict if needed
     def as_dict(self):
         return dict(self._data)
+
+    def as_str(self):
+        """
+        Returns a JSON string representation of the config.
+        """
+        return json.dumps(self._data, sort_keys=True, default=str)
+
+    # === Pickle load ===
+    @classmethod
+    def load(cls, filepath):
+        """Load config from a pickle file and return ReadOnlyConfig instance."""
+        with open(filepath, "rb") as f:
+            data = pickle.load(f)
+        return cls(data)
+
 
 
 class Parser:
@@ -44,8 +73,8 @@ class Parser:
         # --- Common args ---
         # Backtest configuration
         self.parser.add_argument("--start_date", type=str, default="2024-01-01", metavar="YYYY-MM-DD", help="Backtest start date")
-        self.parser.add_argument("--end_date", type=str, default="2025-07-31", metavar="YYYY-MM-DD", help="Backtest end date")
-        self.parser.add_argument("--per_lot_transaction_cost", type=float, default=0.0, metavar="₹", help="Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)")
+        self.parser.add_argument("--end_date", type=str, default="2025-08-28", metavar="YYYY-MM-DD", help="Backtest end date")
+        self.parser.add_argument("--per_lot_transaction_cost", type=float, default=40.0, metavar="₹", help="Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)")
         self.parser.add_argument("--results_dir", type=str, required=False, metavar="FOLDER NAME", help="Directory to save backtest results")
         # Common strategy configuration
         self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
@@ -74,14 +103,13 @@ class Parser:
         return ReadOnlyConfig({
             "start_date": pd.Timestamp(self.args.start_date),
             "end_date": pd.Timestamp(self.args.end_date),
-            "results_dir": self.args.results_dir,
             "per_lot_transaction_cost": self.args.per_lot_transaction_cost
         })
 
     # --- Config getters ---
     def get_straddle_config(self):
         config_dict = {
-
+            "name" : "STRADDLE",
             "long_or_short": self.args.straddle_long_or_short,
             
             "call_risk": self.args.straddle_call_risk,

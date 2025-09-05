@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sys
 import pandas as pd
@@ -78,3 +79,27 @@ def read_json(json_filepath):
         data = json.load(f)
 
     return data
+
+
+def generate_positive_hash(s: str) -> int:
+    """
+    Generates a positive integer hash for a given string.
+    The same string always produces the same hash.
+
+    Args:
+        s (str): Input string
+
+    Returns:
+        int: Positive integer hash
+    """
+    # Convert string to bytes
+    b = s.encode("utf-8")
+    
+    # Use md5 (or sha256) to get a deterministic hash
+    h = hashlib.md5(b).hexdigest()  # hex string
+    
+    # Convert hex string to integer
+    int_hash = int(h, 16)
+    
+    # Ensure it's positive and fits in a Python int
+    return int_hash & 0x7FFFFFFFFFFFFFFF  # 63-bit positive integer
