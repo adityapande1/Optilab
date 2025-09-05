@@ -7,6 +7,42 @@ import os
 import plotly.graph_objects as go
 import pandas as pd
 from optilab_utils.viz_utils import stem_plot, info_box
+import quantstats as qs
+
+# HTML template with full-width and responsive text
+html_template = """
+<div style="
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 4px 4px 12px #c0c0c0, -4px -4px 12px #ffffff;
+    width: 100%;
+    box-sizing: border-box;
+">
+    <div style="
+        color: black; 
+        font-weight: bold; 
+        text-align: left;
+        margin-right: 20px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 20px;
+        flex: 0 0 auto;  /* Key keeps its width */
+    ">{key}:</div>
+    <div style="
+        color: #da1a78; 
+        font-weight: bold; 
+        font-size: 22px;
+        font-family: 'Source Code Pro', monospace;
+        flex: 1;          /* Value takes remaining space */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    ">{val}</div>
+</div>
+"""
+
 
 def labeled_box(title: str, value: str):
     st.markdown(f"""
@@ -32,8 +68,8 @@ def labeled_box_with_help(title: str, value: str, help_text: str = ""):
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            width: 18px; 
-            height: 18px;
+            width: 12px; 
+            height: 12px;
             border-radius: 100%;
             background-color: #f0f0f0;
             border: 1px solid #aaa;
@@ -81,15 +117,15 @@ def labeled_box_with_help(title: str, value: str, help_text: str = ""):
         </style>
 
         <div style="padding:0px; border:1px solid #ddd; border-radius:4px; text-align:center;">
-            <h3 style="margin:0; color:black; text-align:left; padding-left:16px;">
+            <h5 style="margin:0; color:black; text-align:left; padding-left:16px;">
                 {title}
                 <span class="tooltip">
                     <span class="tooltip-circle">?</span>
                     <span class="tooltiptext">{help_text}</span>
                 </span>
-            </h3>
+            </h5>
             <hr style="margin:-2px 0;">
-            <h4 style="margin:10px 0; color:#da1a78; font-size:26px; text-align:left; padding-left:16px;">{value}</h4>
+            <h6 style="margin:10px 0; color:#da1a78; font-size:26px; text-align:left; padding-left:16px;">{value}</h6>
         </div>
     """, unsafe_allow_html=True)
 
@@ -109,11 +145,7 @@ def get_folderhash_to_foldername_map(backtest_results_dir):
 
 
 def run():
-    cols = st.columns([1]*8)
-    for _, col in enumerate(cols):
-        with col:
-            st.markdown("<br>", unsafe_allow_html=True)
-            labeled_box_with_help("Revenue", "$120K", "This is the total revenue for Q1")
+
     # Initialize session state vars
     st.session_state.setdefault("folderhash_to_foldername_map", {})
     st.session_state.setdefault("folderhash_map_initialized", False)
@@ -141,7 +173,7 @@ def run():
                     st.error("Invalid folder hash entered.")
             except ValueError:
                 st.error("Folder hash must be an integer.")
-        st.subheader("[ 2. Select a backtest folder in the sidebar : Folder hash above $\\uparrow$ should be empty > ]")
+        st.subheader("[ 2. Select a backtest folder in the sidebar : Folder hash above $\\uparrow$ should be empty ]")
         st.markdown("---")
 
     # All available backtest folders
@@ -171,7 +203,9 @@ def run():
     # Use the final folder name from session state
     selected_backtest_folder_name = st.session_state.selected_backtest_folder_name
     backtest_analyzer = BacktestAnalyzer(backtest_results_dir=BACKTEST_RESULTS_FOLDERPATH, backtest_folder_name=selected_backtest_folder_name)
-    metrics_engine = MetricEngine(btanalyzer=backtest_analyzer, initial_capital=initial_capital)
+    mengine = MetricEngine(btanalyzer=backtest_analyzer, initial_capital=initial_capital)
+    backtest_metrics = mengine.metrics
+    df_portfolio_metrics_daily = mengine.df_portfolio_metrics_daily
 
     # Display folder info
     col_foldername, col_folder_hash = st.columns([4, 1])
@@ -190,23 +224,60 @@ def run():
     about_strategy = backtest_analyzer.get_about()
 
     # Two main columns: left (configs), right (about)
-    left_col, right_col = st.columns([1, 3])
-    with left_col:
-        st.subheader("📊 Backtest Config")
-        st.write(backtester_config)
-        st.subheader("📊 Strategy Config")
-        st.write(strategy_config)
+    info_box("Configs and Strategy Description")
+    with st.expander("Expand to see Backtester and Strategy Configs and Detailed Strategy Description", expanded=False):
+        left_col, right_col = st.columns([1, 3])
+        with left_col:
+            st.subheader("📊 Backtest Config")
+            st.write(backtester_config)
+            st.subheader("📊 Strategy Config")
+            st.write(strategy_config)
 
-    with right_col:
-        st.subheader("📊 About Strategy")
-        rows_left = len(backtester_config) + len(strategy_config) + 5
-        st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
-    st.markdown("---")
+        with right_col:
+            st.subheader("📊 About Strategy")
+            rows_left = len(backtester_config) + len(strategy_config) + 5
+            st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
+        st.markdown("---")
 
     ############################
     ############################
 
-    st.subheader(metrics_engine.btanalyzer.folder_hash)
+    info_box("Portfolio Performance Metrics")
+    # break <br>
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    broad_stats = {
+        "Initial Portfolio Value (₹) ": initial_capital,
+        "Total P&L (₹) ": round(df_portfolio_metrics_daily['portfolio_value'].iloc[-1] - initial_capital, 4),
+        "Final Portfolio Value (₹) ": round(df_portfolio_metrics_daily['portfolio_value'].iloc[-1], 4),
+        "Pct Change (%) ": round((df_portfolio_metrics_daily['portfolio_value'].iloc[-1] - initial_capital) / initial_capital * 100, 2),
+    }
+
+    cols = st.columns([1]*len(broad_stats))
+    for col, (key, val) in zip(cols, broad_stats.items()):
+        with col:
+            labeled_box(title=key, value=f"{val:.3f}" if isinstance(val, float) else f"{val}")
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
+    count_metrics = ['total_days', 'positive_days', 'negative_days', 'win_rate', 'max_win_streak', 'max_loss_streak', 'highest_return', 'lowest_return']
+    cols = st.columns([1]*len(count_metrics))
+    for col, metric in zip(cols, count_metrics):
+        with col:
+            labeled_box_with_help(title=metric.replace("_", " ").title(),
+                                  value=f"{backtest_metrics[metric]['value']:.4f}" if isinstance(backtest_metrics[metric]['value'], float) else f"{backtest_metrics[metric]['value']}", 
+                                  help_text=backtest_metrics[metric]['help'])
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col_df_drawdown, col_plot_drawdown = st.columns([1, 2])
+    with col_df_drawdown:
+        pass
+    with col_plot_drawdown:
+        qs.plots.d
+
+
+
+    
 
 
 
