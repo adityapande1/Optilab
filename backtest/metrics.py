@@ -107,30 +107,49 @@ class MetricEngine:
         # Drawdown details
         dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
         dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown',ascending=True)
+        # Reindex from 0 --> 
+        dd_details.index = range(len(dd_details))
         self.metrics['df_drawdown'] = {
             'help':'Detailed statistics about drawdowns, including duration and recovery time.',
             'value': dd_details
         }
 
 
+        # Ratios
+        self.metrics['sharpe_ratio'] = {
+            'help':'The Sharpe ratio measures risk-adjusted returns by dividing excess returns (returns - risk-free rate) by the standard deviation of returns. Higher values indicate better risk-adjusted performance.',
+            'value': qs.stats.sharpe(returns=self.df_portfolio_metrics_daily['daily_return'], rf=0.0)
+        }
+        self.metrics['sortino_ratio'] = {
+            'help':'The Sortino ratio is a variation of the Sharpe ratio that focuses only on downside volatility. It is calculated by dividing excess returns by the standard deviation of negative returns. Higher values indicate better risk-adjusted performance with a focus on downside risk.',
+            'value': qs.stats.sortino(returns=self.df_portfolio_metrics_daily['daily_return'], rf=0.0)
+        }
+        self.metrics['daily_VaR'] = {
+            'help':'The daily Value at Risk (VaR) estimates the maximum expected loss over a one-day horizon at a specified confidence level[95%], using the variance-covariance method.',
+            'value': float(qs.stats.value_at_risk(self.df_portfolio_metrics_daily['daily_return'], confidence=0.95))
+        }
+        self.metrics['cagr'] = {
+            'help':'The Compound Annual Growth Rate (CAGR) represents the mean annual growth rate of an investment over a specified period of time, assuming the profits are reinvested at the end of each period. It provides a smoothed annualized return that accounts for compounding effects.',
+            'value': qs.stats.cagr(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['recovery_factor'] = {
+            'help':'The recovery factor measures how quickly a strategy recovers from drawdowns by comparing total returns to the maximum drawdown experienced. Higher values indicate better recovery characteristics.',
+            'value': float(qs.stats.recovery_factor(self.df_portfolio_metrics_daily['daily_return']))
+        }
+        self.metrics['gain_to_pain_ratio'] = {
+            'help':'Jack Schwager\'s Gain-to-Pain Ratio (GPR) measures the total gains divided by the total losses, providing a simple measure of how much profit is generated per unit of loss. Higher values indicate better performance.',
+            'value': float(qs.stats.gain_to_pain_ratio(self.df_portfolio_metrics_daily['daily_return']))
+        }
+        self.metrics['avg_win'] = {
+            'help':'Average of positive returns, indicating the typical size of winning periods.',
+            'value': qs.stats.avg_win(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        self.metrics['avg_loss'] = {
+            'help':'Average of negative returns, indicating the typical size of losing periods.',
+            'value': qs.stats.avg_loss(returns=self.df_portfolio_metrics_daily['daily_return'])
+        }
+        
 
-
-
-        # self.metrics['total_days'] = len(self.df_portfolio_metrics_daily.index.normalize().unique())  # total number of unique days in the backtest
-        # self.metrics['win_ratio'] = qs.stats.win_rate(returns=self.df_portfolio_metrics_daily['daily_return'])            # fraction of positive days
-        # self.metrics['max_win_streak'] = qs.stats.consecutive_wins(returns=self.df_portfolio_metrics_daily['daily_return'])    # longest win streak
-        # self.metrics['max_loss_streak'] = qs.stats.consecutive_losses(returns=self.df_portfolio_metrics_daily['daily_return'])  # longest loss streak
-        # self.metrics['avg_win'] = qs.stats.avg_win(returns=self.df_portfolio_metrics_daily['daily_return'])             # mean of positive returns
-        # self.metrics['avg_loss'] = qs.stats.avg_loss(returns=self.df_portfolio_metrics_daily['daily_return'])            # mean of negative returns
-        # self.metrics['win_loss_ratio'] = qs.stats.win_loss_ratio(returns=self.df_portfolio_metrics_daily['daily_return'])      # avg win / avg loss
-
-        # self.metrics['var_95'] = float(qs.stats.value_at_risk(self.df_portfolio_metrics_daily['daily_return'], confidence=0.95))
-        # self.metrics['recover_factor'] = float(qs.stats.recovery_factor(self.df_portfolio_metrics_daily['daily_return']))
-        # self.metrics['payoff_ratio'] = float(qs.stats.payoff_ratio(self.df_portfolio_metrics_daily['daily_return']))
-
-        # dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
-        # dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown',ascending=True)
-        # self.metrics['drawdown_details'] = dd_details
 
 
 

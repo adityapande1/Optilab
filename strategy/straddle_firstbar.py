@@ -5,7 +5,7 @@ import pandas as pd
 import copy
 from rich import print
 
-class Straddle(Strategy):
+class StraddleFirstBar(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)
 
@@ -21,6 +21,10 @@ class Straddle(Strategy):
         self.position = [] # will contain orders that are 'filled'
         self.outstanding_orders = None # will change later according to orders other than filled
         self.position_tally = {}    # Will contain the tally of each filled --> squared of position
+
+    def get_relevant_strike(self, timestamp: pd.Timestamp) -> int:
+        assert timestamp.time() == self.config.entry_timestamp.time(), f"get_relevant_strike should be called only at {self.config.entry_timestamp.time().strftime('%H:%M:%S')}. Given {timestamp.time().strftime('%H:%M:%S')}"
+        import ipdb; ipdb.set_trace()
 
     def square_off_actions(self, square_off_ids: set[int] | None = None) -> list[Action]:
         '''Return all the actions required to square off the open positions at market order'''
@@ -40,36 +44,14 @@ class Straddle(Strategy):
 
         return actions
     
-    def _check_exit_condition(self, pos: dict, timestamp: pd.Timestamp) -> bool:
-        '''Check if the exit condition is met for a given position at a specific timestamp'''
-        # This will be different for each strategy
-
-        action = pos['action']
-        filled_price = pos['price']
-        current_price = self.dbconnector.get_option_price(strike=action.strike, option_type=action.option_type, expiry_date=action.expiry, timestamp=timestamp)
-        pos_pnl = (current_price - filled_price) * self.config.lot_size
-        pos_pnl = pos_pnl if action.trade_type == "long" else -pos_pnl
-
-        if action.option_type == "CE":
-            check = pos_pnl <= -self.config.call_risk   # exit if call leg loss >= call_risk
-        elif action.option_type == "PE":
-            check = pos_pnl <= -self.config.put_risk    # exit if put leg loss >= put_risk
-        else:
-            raise ValueError(f"Unknown option type: {action.option_type}")
-
-        return check
-
     def action(self, timestamp: pd.Timestamp) -> list[Action] | None:
 
         actions = None
         if timestamp.time() == self.config.entry_timestamp.time(): 
             
-            self.strike = self.dbconnector.get_ATM_strike(timestamp)
+            self.strike = self.get_relevant_strike(timestamp)
             closest_expiry = self.dbconnector.get_closest_expiry(timestamp)
             
-            #atm_call_action = Action(option_type="CE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type="market")
-            #atm_put_action = Action(option_type="PE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type="market")
-
             atm_call_action = Action(option_type="CE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, 
                                      order_type=self.config.call_order_type, stoploss=self.config.call_risk)
             
@@ -121,6 +103,8 @@ class Straddle(Strategy):
         elif self.config.long_or_short == "long":
             desc = "Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited"
         about_str += f"Description : {desc}\n"
+
+        about_str += f"Straddle First Bar always enters a straddle at the end of the first 5 min bar ie at 09:19 candle stick close\n"
 
         about_str += f"Our Net Position : {self.config.long_or_short.upper()}\n"
         about_str += f"ATM CALL Params: "

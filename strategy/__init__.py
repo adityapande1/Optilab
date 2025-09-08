@@ -147,3 +147,8 @@ class Strategy(ABC):
     def on_trade_execution(self, timestamp: pd.Timestamp, metadata: list[dict]):
         """Handle trade execution event."""
         raise NotImplementedError("Subclasses must implement on_trade_execution()")
+    
+    @abstractmethod
+    def about(self) -> str:
+        """Return a string describing the strategy."""
+        raise NotImplementedError("Subclasses must implement about()")
