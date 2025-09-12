@@ -93,3 +93,14 @@ def stem_plot(df, colname="daily_pnl"):
         )
 
     return fig
+
+
+
+def labeled_box(title: str, value: str):
+    st.markdown(f"""
+        <div style="padding:0px 0px 0px 0px; border:1px solid #ddd; border-radius:4px; text-align:center;">
+            <h3 style="margin:0; color:black; text-align:center;">{title}</h3>
+            <hr style="margin:-2px 0;">
+            <h4 style="margin:10px 0; color:#da1a78; font-size:26px; text-align:center;">{value}</h4>
+        </div>
+    """, unsafe_allow_html=True)

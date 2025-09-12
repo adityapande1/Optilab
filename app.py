@@ -4,8 +4,12 @@ from app_straddle_tweaker import run as run_straddle_tweaker
 from app_home import run as run_home    
 from app_daily_pnl import run as run_daily_pnl    
 from app_metrics import run as run_metrics
+# from app_evaluate_strategy_oldnworking import run as run_evaluate_strategy
 from app_evaluate_strategy import run as run_evaluate_strategy
+from app_visualize_strategy import run as run_visualize_strategy
 from app_compare_stratergies import run as run_compare_stratergies
+from app_nifty_viz import run as run_nifty_viz
+from app_hypothesis_tester import run as run_hypothesis_tester
 # --- Wide page setting filling complete window ---
 st.set_page_config(
     page_title="Optiverse Lab",
@@ -51,16 +55,19 @@ st.markdown(
 # --- Navigation buttons (side by side with small gap) ---
 # state_names = ["Home", "Analyze Backtest Results", "Daily PnL", "Straddle Tweaker", "Evaluate Strategy", "Compare Strategies", "Metrics"]
 # button_names = ["btn_home", "btn_analyze_backtest_results", "btn_daily_pnl", "btn_straddle_tweaker", "btn_evaluate_strategy", "btn_compare_strategies", "btn_metrics"]
-state_names = ["Home", "Daily PnL", "Evaluate Strategy", "Compare Strategies", "Metrics"]
-button_names = ["btn_home", "btn_daily_pnl", "btn_evaluate_strategy", "btn_compare_strategies", "btn_metrics"]
+state_names = ["Home", "Daily PnL", "Evaluate Strategy", "Visualize Strategy", "Compare Strategies", "Metrics", "Nifty Visualization", "Hypothesis Tester"]
+button_names = ["btn_home", "btn_daily_pnl", "btn_evaluate_strategy", "btn_visualize_strategy", "btn_compare_strategies", "btn_metrics", "btn_nifty_viz", "btn_hypothesis_tester"]
 page_functions = {
     "Home": run_home,
     # "Analyze Backtest Results": run_backtest_results,
     "Daily PnL": run_daily_pnl,
     # "Straddle Tweaker": run_straddle_tweaker,
     "Evaluate Strategy": run_evaluate_strategy,
+    "Visualize Strategy": run_visualize_strategy,
     "Compare Strategies": run_compare_stratergies,
-    "Metrics": run_metrics
+    "Metrics": run_metrics,
+    "Nifty Visualization": run_nifty_viz,
+    "Hypothesis Tester": run_hypothesis_tester,
 }
 
 # Added some comment git
