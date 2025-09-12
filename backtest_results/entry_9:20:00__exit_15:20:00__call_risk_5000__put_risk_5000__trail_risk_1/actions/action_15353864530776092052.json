@@ -1,0 +1,14 @@
+{
+    "option_type": "CE",
+    "strike": 25050,
+    "trade_type": "short",
+    "expiry": "2024-09-12",
+    "order_type": "market_stoploss_trail",
+    "num_lots": 1,
+    "limit_price": null,
+    "lot_type": "full",
+    "lot_idx": 1,
+    "square_off_id": null,
+    "stoploss": 5000.0,
+    "target": null
+}
