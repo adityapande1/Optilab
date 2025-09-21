@@ -1,0 +1,11 @@
+defaults:
+  - strategy: straddle
+  - backtester: base_backtester
+  - _self_
+
+hydra:
+  run:
+    dir: .          # run in current directory, no new run dir
+  output_subdir: null  # don’t create .hydra subdir
+  job:
+    chdir: False    # don’t change working dir internally
