@@ -11,6 +11,7 @@ from utils.data_utils import read_parquet_data
 import pickle
 from strategy import Action
 from utils.parser import ReadOnlyConfig
+from configs.config_schemas import BaseConfig
 
 
 class BacktestAnalyzer:
@@ -36,13 +37,13 @@ class BacktestAnalyzer:
     def get_strategy_config(self):
         strategy_config = {}
         if os.path.exists(self.strategy_config_pkl_path):
-            strategy_config = ReadOnlyConfig.load(self.strategy_config_pkl_path)
+            strategy_config = BaseConfig.load(self.strategy_config_pkl_path)
         return strategy_config
 
     def get_backtester_config(self) -> dict:
         backtester_config = {}
         if os.path.exists(self.backtester_config_pkl_path):
-            backtester_config = ReadOnlyConfig.load(self.backtester_config_pkl_path)
+            backtester_config = BaseConfig.load(self.backtester_config_pkl_path)
         return backtester_config
 
     def get_about(self) -> str:
