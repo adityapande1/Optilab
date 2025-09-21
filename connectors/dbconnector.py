@@ -1,7 +1,11 @@
-import pandas as pd
-from utils.data_utils import read_parquet_data, read_option_data
-from constants import NIFTY_PARQUET_PATH, GLOBAL_DB_FOLDERPATH, NIFTY_EXPIRIES_JSON_PATH
 import json
+
+import pandas as pd
+
+from constants import (GLOBAL_DB_FOLDERPATH, NIFTY_EXPIRIES_JSON_PATH,
+                       NIFTY_PARQUET_PATH)
+from utils.data_utils import read_option_data, read_parquet_data
+
 
 class DBConnector:
     def __init__(self, database_path: str=None, expiries_json_path: str=None, spot_parquet_path: str=None):
@@ -39,8 +43,8 @@ class DBConnector:
 
     def get_option_price(self, strike, option_type, expiry_date, timestamp=None, field='close', ticker="NIFTY", drop_duplicate_indices=True) -> float:
         '''This method should return the option price [field] at a specific timestamp'''
-        # Example  ::  self.get_option_price(strike=22500, option_type="CE", expiry_date="2025-05-08", timestamp=pd.Timestamp("2025-05-08 9:15:00")) 
-        
+        # Example  ::  self.get_option_price(strike=22500, option_type="CE", expiry_date="2025-05-08", timestamp=pd.Timestamp("2025-05-08 9:15:00"))
+
         df_option = self.get_option_df(
             option_type=option_type,
             strike=strike,
@@ -55,20 +59,23 @@ class DBConnector:
 
         return price
 
-    def get_expiries(self, timestamp: pd.Timestamp) -> list[str]:
+    def get_all_available_expiry_dates(self) -> list[str]:
         # read expiries
         with open(self.expiries_json_path, 'r') as f:
             all_expiries = json.load(f)
-
-        # Compare only dates so that same-day expiries are also included
-        ts_date = timestamp.normalize()
-        all_expiries = [exp for exp in all_expiries if pd.Timestamp(exp) >= ts_date]
         all_expiries.sort()
-        
+        return all_expiries
+
+    def get_all_available_expiry_dates_from(self, timestamp: pd.Timestamp) -> list[str]:
+        # read expiries
+        all_expiries = self.get_all_available_expiry_dates()
+        timestamp_date = timestamp.normalize()
+        all_expiries = [exp for exp in all_expiries if pd.Timestamp(exp) >= timestamp_date]
+        all_expiries.sort()
         return all_expiries
 
     def get_closest_expiry(self, timestamp: pd.Timestamp) -> str:
-        all_expiries = self.get_expiries(timestamp)
+        all_expiries = self.get_all_available_expiry_dates_from(timestamp)
         return all_expiries[0] if all_expiries else None
 
 

@@ -63,8 +63,6 @@ class ReadOnlyConfig:
             data = pickle.load(f)
         return cls(data)
 
-
-
 class Parser:
     def __init__(self):
 
@@ -77,7 +75,7 @@ class Parser:
         self.parser.add_argument("--per_lot_transaction_cost", type=float, default=40.0, metavar="₹", help="Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)")
         self.parser.add_argument("--results_dir", type=str, required=False, metavar="FOLDER NAME", help="Directory to save backtest results")
         # Common strategy configuration
-        self.parser.add_argument("--strategy", type=str, choices=["straddle", "straddle_firstbar"], default="straddle", help="Strategy to use")
+        self.parser.add_argument("--strategy", type=str, choices=["straddle"], default="straddle", help="Strategy to use")
         self.parser.add_argument("--entry_time", type=str, default="9:15:00", metavar="HH:MM:SS", help="Time to enter positions each day")
         self.parser.add_argument("--exit_time", type=str, default="15:20:00", metavar="HH:MM:SS", help="Time to forcefully exit all positions each day")
         self.parser.add_argument("--lot_size", type=int, default=75, help="Lot size for trading")      
@@ -93,15 +91,6 @@ class Parser:
         straddle_group.add_argument("--straddle_long_or_short", type=str, choices=["long", "short"], default="short", help="Direction of the straddle position")
         # -------------------
 
-        # --- Straddle_Firstbar args ---
-        # Call leg configuration
-        straddle_firstbar_group = self.parser.add_argument_group("straddle_firstbar")
-        straddle_firstbar_group.add_argument("--straddle_firstbar_call_risk", type=float, default=float("inf"), metavar="₹", help="Risk for the call leg in a straddle first bar (₹). The leg gets cut if this risk is breached.")
-        straddle_firstbar_group.add_argument("--trail_firstbar_call_risk", action="store_true", help="Whether to trail the stoploss risk for the call leg.")
-        straddle_firstbar_group.add_argument("--straddle_firstbar_put_risk", type=float, default=float("inf"), metavar="₹", help="Risk for the put leg in a straddle first bar (₹). The leg gets cut if this risk is breached.")
-        straddle_firstbar_group.add_argument("--trail_firstbar_put_risk", action="store_true", help="Whether to trail the stoploss risk for the put leg.")
-        straddle_firstbar_group.add_argument("--straddle_firstbar_long_or_short", type=str, choices=["long", "short"], default="short", help="Direction of the straddle first bar position")
-        # -------------------
 
     def parse_args(self):
         self.args = self.parser.parse_args()
@@ -136,26 +125,6 @@ class Parser:
 
         return ReadOnlyConfig(config_dict)
     
-    def get_straddle_firstbar_config(self):
-        config_dict = {
-            "name" : "STRADDLE_FIRSTBAR",
-            "long_or_short": self.args.straddle_firstbar_long_or_short,
-
-            "call_risk": self.args.straddle_firstbar_call_risk,
-            "trail_call_risk": self.args.trail_firstbar_call_risk,
-            "put_risk": self.args.straddle_firstbar_put_risk,
-            "trail_put_risk": self.args.trail_firstbar_put_risk,
-
-            "lot_size": self.args.lot_size,
-            "entry_timestamp": pd.Timestamp("9:19:00"),             # Always enter at the end of first 5 min bar irrespective of what user provides    
-            "exit_timestamp": pd.Timestamp(self.args.exit_time)
-        }
-
-        config_dict['call_order_type'] = 'market_stoploss_trail' if config_dict['trail_call_risk'] else 'market_stoploss'
-        config_dict['put_order_type'] = 'market_stoploss_trail' if config_dict['trail_put_risk'] else 'market_stoploss'
-
-        return ReadOnlyConfig(config_dict)
-
 if __name__ == "__main__":
     parser = Parser()
     args = parser.parse_args()
