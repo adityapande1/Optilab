@@ -10,7 +10,6 @@ from constants import BACKTEST_RESULTS_FOLDERPATH
 from utils.data_utils import read_parquet_data
 import pickle
 from strategy import Action
-from utils.parser import ReadOnlyConfig
 from configs.config_schemas import BaseConfig
 
 
