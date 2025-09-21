@@ -9,7 +9,41 @@ import plotly.graph_objects as go
 import pandas as pd
 from plotly.subplots import make_subplots
 
+VALID_TIMES = pd.date_range("09:15", "15:29", freq="1min").time
 
+
+def shift_indices(step: int, df_spot):
+    st.session_state.start_idx = min(
+        max(0, st.session_state.start_idx + step), len(df_spot) - 1
+    )
+    st.session_state.end_idx = min(
+        max(0, st.session_state.end_idx + step), len(df_spot) - 1
+    )
+    st.session_state.selected_start_timestamp = df_spot.index[st.session_state.start_idx]
+    st.session_state.selected_end_timestamp = df_spot.index[st.session_state.end_idx]
+
+
+
+
+# @st.cache_data
+def get_position_infos(backtest_analyzer):
+    
+    position_infos = []
+    for position_hash in backtest_analyzer.get_position_hashes():
+        df_position = backtest_analyzer.get_df_position(position_hash=position_hash)
+        dictio = {
+            'position_hash': position_hash,
+            'first_timestamp': df_position.index.min(),
+            'last_timestamp': df_position.index.max()
+        }
+        position_infos.append(dictio)
+        
+    df_position_info = pd.DataFrame(position_infos)    
+    # The coloums first_timestamp and last_timestamp should be in pd.Timestamp format
+    df_position_info['first_timestamp'] = pd.to_datetime(df_position_info['first_timestamp'])
+    df_position_info['last_timestamp'] = pd.to_datetime(df_position_info['last_timestamp'])
+
+    return df_position_info
 
 def get_folderhash_to_foldername_map(backtest_results_dir):
     folderhash_to_foldername_map = {}
@@ -65,7 +99,6 @@ def make_candlestick_subplot(df_list, titles=None, height_per_chart=400):
     
     fig.update_xaxes(type="category")
     
-    # === Efficient 9:15 vlines ===
   
     
     return fig
@@ -73,16 +106,9 @@ def make_candlestick_subplot(df_list, titles=None, height_per_chart=400):
 def run():
     
     BACKTEST_RESULTS_FOLDERPATH = "../Optiverse/backtest_results"
-    
     # Initialize session state vars
-    st.session_state.setdefault("folderhash_to_foldername_map", {})
-    st.session_state.setdefault("folderhash_map_initialized", False)
     st.session_state.setdefault("selected_backtest_folder_name", None)
-
-    # Build the folderhash → foldername map only once
-    if st.session_state.folderhash_map_initialized is False:
-        st.session_state.folderhash_to_foldername_map = get_folderhash_to_foldername_map(BACKTEST_RESULTS_FOLDERPATH)
-        st.session_state.folderhash_map_initialized = True
+    st.session_state.setdefault('folderhash_to_foldername_map', get_folderhash_to_foldername_map(BACKTEST_RESULTS_FOLDERPATH))
 
     # UI header
     col = st.container()
@@ -126,9 +152,7 @@ def run():
     selected_backtest_folder_name = st.session_state.selected_backtest_folder_name
     backtest_analyzer = BacktestAnalyzer(backtest_results_dir=BACKTEST_RESULTS_FOLDERPATH, backtest_folder_name=selected_backtest_folder_name)
     mengine = MetricEngine(btanalyzer=backtest_analyzer, initial_capital=initial_capital)
-    backtest_metrics = mengine.metrics
-    df_portfolio_metrics_daily = mengine.df_portfolio_metrics_daily
-    df_portfolio_metrics_daily['daily_return_pct'] = df_portfolio_metrics_daily['daily_return'] * 100
+    dbc = DBConnector()
 
     # Display folder info
     col_foldername, col_folder_hash = st.columns([4, 1])
@@ -163,107 +187,248 @@ def run():
 
     ############################
     ############################
-
-
-
-# def run():
     
-    dbc = DBConnector()
-    df_stock1 = dbc.df_spot.copy()
-    df_stock2 = dbc.df_spot.copy()
-    df_stock3 = dbc.df_spot.copy()
+    ### SOME HASHES ###
+    
+    # 4707710022288195093
+    # 8166016811902060856
+    # 6770455715190846374
+    ########
+    
+    ## Load dataframes
+    df_portfolio_metrics = mengine.df_portfolio_metrics
+    df_spot = dbc.df_spot.copy()
+    df_spot = df_spot[df_spot.index >= df_portfolio_metrics.index.min()]
+
+    # --- Sidebar inputs with keys ---
+    min_date = df_portfolio_metrics.index.min().date()
+    max_date = df_portfolio_metrics.index.max().date()
+
+    # Sidebar inputs
+    selected_start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date, value=min_date, key="sidebar_start_date")
+    selected_start_time = st.sidebar.selectbox("Start Time", options=VALID_TIMES, index=0, key="sidebar_start_time")
+    st.session_state.sidebar_start_ts = pd.Timestamp.combine(selected_start_date, selected_start_time)
+
+    selected_end_date = st.sidebar.date_input("End Date", min_value=min_date, max_value=max_date, value=selected_start_date + pd.Timedelta(days=1), key="sidebar_end_date")
+    selected_end_time = st.sidebar.selectbox("End Time", options=VALID_TIMES, index=0, key="sidebar_end_time")
+    st.session_state.sidebar_end_ts = pd.Timestamp.combine(selected_end_date, selected_end_time)
 
 
-    if "start_idx" not in st.session_state:
-        st.session_state.start_idx = 0
+    # Write session state vars of sidebar
+    st.write(f"### Sidebar Start Date: {st.session_state.sidebar_start_date}")
+    st.write(f"### Sidebar Start Time: {st.session_state.sidebar_start_time}")
+    st.write(f"### Sidebar Start Timestamp: {st.session_state.sidebar_start_ts}")
 
-    # Window size
-    WINDOW = 125
+    st.write(f"### Sidebar End Date: {st.session_state.sidebar_end_date}")
+    st.write(f"### Sidebar End Time: {st.session_state.sidebar_end_time}")
+    st.write(f"### Sidebar End Timestamp: {st.session_state.sidebar_end_ts}")
+    
 
-    col_prev15, col1_prev5, col_prev1, col_spacer, col_next1, col_next5, col_next15 = st.columns([1.75, 1.75, 1.75, 8, 1.75, 1.75, 1.75])
-    with col_prev15:
-        if st.button("⬅️ Prev15"):
-            st.session_state.start_idx = max(0, st.session_state.start_idx - 15)
-    with col1_prev5:
-        if st.button("⬅️ Prev5"):
-            st.session_state.start_idx = max(0, st.session_state.start_idx - 5)
-    with col_prev1:
-        if st.button("⬅️ Prev1"):
-            st.session_state.start_idx = max(0, st.session_state.start_idx - 1)
-    with col_next1:
-        if st.button("➡️ Next1"):
-            st.session_state.start_idx = min(len(df_stock1) - WINDOW, st.session_state.start_idx + 1)
-    with col_next5:
-        if st.button("➡️ Next5"):
-            st.session_state.start_idx = min(len(df_stock1) - WINDOW, st.session_state.start_idx + 5)
-    with col_next15:
-        if st.button("➡️ Next15"):
-            st.session_state.start_idx = min(len(df_stock1) - WINDOW, st.session_state.start_idx + 15)
 
-    # Subset of data
-    sub1 = df_stock1.iloc[st.session_state.start_idx : st.session_state.start_idx + WINDOW]
-    sub2 = df_stock2.iloc[st.session_state.start_idx : st.session_state.start_idx + WINDOW]
-    sub3 = df_stock3.iloc[st.session_state.start_idx : st.session_state.start_idx + WINDOW]
 
-    # Create subplot figure
-    fig = make_candlestick_subplot([sub1, sub2, sub3], titles=["Stock 1", "Stock 2", "Stock 3"], height_per_chart=500)
 
-    col1, col2 = st.columns([8, 2])
-    with col1:
-        st.plotly_chart(fig, use_container_width=True)
-    with col2:
-        st.markdown("### Current Window Indices:")
-        st.write(f"Start Index: {st.session_state.start_idx}")
-        st.write(f"End Index: {st.session_state.start_idx + WINDOW - 1}")
-        st.markdown("### Instructions:")
-        st.markdown("""
-        - Use the buttons to navigate through the data in increments of 1, 5, or 15.
-        - The candlestick charts will update to show the selected window of data.
-        - Yellow dashed vertical lines indicate 9:15 AM timestamps within the visible range.
-        """)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # df_spot = dbc.df_spot.copy()
+    # df_spot = df_spot[df_spot.index >= df_portfolio_metrics.index.min()]
+    # st.markdown("#### Summary of All Positions")
+    # # st.dataframe(df_position_info, use_container_width=True)
+    # # st.dataframe(df_portfolio_metrics, use_container_width=True)
+
+
+
+
+    # if selected_start_timestamp > selected_end_timestamp:
+    #     st.sidebar.error("Error: End date must fall after start date.")
         
-        
-        
-    def split_candlestick(df, split_idx, name="Stock"):
-        """
-        Plots candlestick where candles before split_idx are black/white,
-        and after split_idx are colored.
-        """
-        # First segment (B/W candles)
-        trace_bw = go.Candlestick(
-            x=df.index[:split_idx],
-            open=df['open'][:split_idx],
-            high=df['high'][:split_idx],
-            low=df['low'][:split_idx],
-            close=df['close'][:split_idx],
-            name=f"{name} (B/W)",
-            increasing_line_color="black",
-            decreasing_line_color="black",
-            increasing_fillcolor="white",
-            decreasing_fillcolor="lightgrey"
-        )
+    # else:
 
-        # Second segment (colored candles)
-        trace_colored = go.Candlestick(
-            x=df.index[split_idx:],
-            open=df['open'][split_idx:],
-            high=df['high'][split_idx:],
-            low=df['low'][split_idx:],
-            close=df['close'][split_idx:],
-            name=f"{name} (Colored)",
-            increasing_line_color="darkgreen",   # border for bullish candles
-            decreasing_line_color="crimson",     # border for bearish candles
-            increasing_fillcolor="seagreen",   # fill for bullish candles
-            decreasing_fillcolor="deeppink",         # fill for bearish candles
-            # whiskerwidth=1                     # optional: thickness of wicks
-            )
 
-        fig = go.Figure(data=[trace_bw, trace_colored])
-        fig.update_layout(xaxis_rangeslider_visible=False, height=900, title=f"{name} Candlestick with Split at Index {split_idx}")
-        fig.update_xaxes(type="category")
         
-        return fig
+
+
+
+    #     # --- Display current state ---
+    #     st.write(f"### Selected Time Range: {df_spot.index[st.session_state.start_idx]} to {df_spot.index[st.session_state.end_idx]}")
+    #     st.write(f"Start Index: {st.session_state.start_idx}, End Index: {st.session_state.end_idx}")
+
+    #     # --- Navigation buttons ---
+    #     col_prev5, col_spacer, col_next5 = st.columns([1.75, 8, 1.75])
+    #     with col_prev5:
+    #         if st.button("⬅️ Prev5"):
+    #             st.session_state.start_idx = max(0, st.session_state.start_idx - 5)
+    #             st.session_state.end_idx = max(0, st.session_state.end_idx - 5)
+    #     with col_next5:
+    #         if st.button("➡️ Next5"):
+    #             st.session_state.start_idx = min(len(df_spot) - 1, st.session_state.start_idx + 5)
+    #             st.session_state.end_idx = min(len(df_spot) - 1, st.session_state.end_idx + 5)
+                
+                
+    #     df_spot_window = df_spot.iloc[st.session_state.start_idx : st.session_state.end_idx + 1]
+    #     fig = make_candlestick_subplot([df_spot_window, df_spot_window, df_spot_window], 
+    #                                    titles=["Portfolio metrics", "Portfolio metrics", "Portfolio metrics"],
+    #                                    height_per_chart=500)
+    #     st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+        
     
     
-    fig = split_candlestick(sub1, split_idx=60, name="Stock 1")
-    st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
+    
+    
+
+
+
+# # def run():
+    
+#     dbc = DBConnector()
+#     df_stock1 = dbc.df_spot.copy()
+#     df_stock2 = dbc.df_spot.copy()
+#     df_stock3 = dbc.df_spot.copy()
+
+
+#     if "start_idx" not in st.session_state:
+#         st.session_state.start_idx = 0
+
+#     # Window size
+#     WINDOW = 125
+
+#     col_prev15, col1_prev5, col_prev1, col_spacer, col_next1, col_next5, col_next15 = st.columns([1.75, 1.75, 1.75, 8, 1.75, 1.75, 1.75])
+#     with col_prev15:
+#         if st.button("⬅️ Prev15"):
+#             st.session_state.start_idx = max(0, st.session_state.start_idx - 15)
+#     with col1_prev5:
+#         if st.button("⬅️ Prev5"):
+#             st.session_state.start_idx = max(0, st.session_state.start_idx - 5)
+#     with col_prev1:
+#         if st.button("⬅️ Prev1"):
+#             st.session_state.start_idx = max(0, st.session_state.start_idx - 1)
+#     with col_next1:
+#         if st.button("➡️ Next1"):
+#             st.session_state.start_idx = min(len(df_stock1) - WINDOW, st.session_state.start_idx + 1)
+#     with col_next5:
+#         if st.button("➡️ Next5"):
+#             st.session_state.start_idx = min(len(df_stock1) - WINDOW, st.session_state.start_idx + 5)
+#     with col_next15:
+#         if st.button("➡️ Next15"):
+#             st.session_state.start_idx = min(len(df_stock1) - WINDOW, st.session_state.start_idx + 15)
+
+#     # Subset of data
+#     sub1 = df_stock1.iloc[st.session_state.start_idx : st.session_state.start_idx + WINDOW]
+#     sub2 = df_stock2.iloc[st.session_state.start_idx : st.session_state.start_idx + WINDOW]
+#     sub3 = df_stock3.iloc[st.session_state.start_idx : st.session_state.start_idx + WINDOW]
+
+#     # Create subplot figure
+#     fig = make_candlestick_subplot([sub1, sub2, sub3], titles=["Stock 1", "Stock 2", "Stock 3"], height_per_chart=500)
+
+#     col1, col2 = st.columns([8, 2])
+#     with col1:
+#         st.plotly_chart(fig, use_container_width=True)
+#     with col2:
+#         st.markdown("### Current Window Indices:")
+#         st.write(f"Start Index: {st.session_state.start_idx}")
+#         st.write(f"End Index: {st.session_state.start_idx + WINDOW - 1}")
+#         st.markdown("### Instructions:")
+#         st.markdown("""
+#         - Use the buttons to navigate through the data in increments of 1, 5, or 15.
+#         - The candlestick charts will update to show the selected window of data.
+#         - Yellow dashed vertical lines indicate 9:15 AM timestamps within the visible range.
+#         """)
+        
+        
+        
+#     def split_candlestick(df, split_idx, name="Stock"):
+#         """
+#         Plots candlestick where candles before split_idx are black/white,
+#         and after split_idx are colored.
+#         """
+#         # First segment (B/W candles)
+#         trace_bw = go.Candlestick(
+#             x=df.index[:split_idx],
+#             open=df['open'][:split_idx],
+#             high=df['high'][:split_idx],
+#             low=df['low'][:split_idx],
+#             close=df['close'][:split_idx],
+#             name=f"{name} (B/W)",
+#             increasing_line_color="black",
+#             decreasing_line_color="black",
+#             increasing_fillcolor="white",
+#             decreasing_fillcolor="lightgrey"
+#         )
+
+#         # Second segment (colored candles)
+#         trace_colored = go.Candlestick(
+#             x=df.index[split_idx:],
+#             open=df['open'][split_idx:],
+#             high=df['high'][split_idx:],
+#             low=df['low'][split_idx:],
+#             close=df['close'][split_idx:],
+#             name=f"{name} (Colored)",
+#             increasing_line_color="darkgreen",   # border for bullish candles
+#             decreasing_line_color="crimson",     # border for bearish candles
+#             increasing_fillcolor="seagreen",   # fill for bullish candles
+#             decreasing_fillcolor="deeppink",         # fill for bearish candles
+#             # whiskerwidth=1                     # optional: thickness of wicks
+#             )
+
+#         fig = go.Figure(data=[trace_bw, trace_colored])
+#         fig.update_layout(xaxis_rangeslider_visible=False, height=900, title=f"{name} Candlestick with Split at Index {split_idx}")
+#         fig.update_xaxes(type="category")
+        
+#         return fig
+    
+    
+#     fig = split_candlestick(sub1, split_idx=60, name="Stock 1")
+#     st.plotly_chart(fig, use_container_width=True)

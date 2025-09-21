@@ -95,6 +95,8 @@ def stem_plot(df, colname="daily_pnl"):
     return fig
 
 def run():
+
+
     cols = st.columns([7, 1])
     with cols[0]:
         st.markdown("---\n# Daily P&L Analysis \n---")
@@ -208,7 +210,7 @@ def run():
         # Stem Plot
         fig = stem_plot(df_portfolio_metrics_filtered, colname="daily_pnl")
         st.plotly_chart(fig, use_container_width=True)
-        
+
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Top 8 Daily Losses")

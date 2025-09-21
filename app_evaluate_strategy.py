@@ -23,8 +23,8 @@ html_template = """
     box-sizing: border-box;
 ">
     <div style="
-        color: black; 
-        font-weight: bold; 
+        color: black;
+        font-weight: bold;
         text-align: left;
         margin-right: 20px;
         font-family: 'Courier New', Courier, monospace;
@@ -32,8 +32,8 @@ html_template = """
         flex: 0 0 auto;  /* Key keeps its width */
     ">{key}:</div>
     <div style="
-        color: #da1a78; 
-        font-weight: bold; 
+        color: #da1a78;
+        font-weight: bold;
         font-size: 22px;
         font-family: 'Source Code Pro', monospace;
         flex: 1;          /* Value takes remaining space */
@@ -68,7 +68,7 @@ def labeled_box_with_help(title: str, value: str, help_text: str = ""):
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            width: 12px; 
+            width: 12px;
             height: 12px;
             border-radius: 100%;
             background-color: #f0f0f0;
@@ -175,7 +175,6 @@ def histogram(df, colname, nbins=30, title=None, height=600):
     return fig
 
 
-
 def get_folderhash_to_foldername_map(backtest_results_dir):
     folderhash_to_foldername_map = {}
     for foldername in os.listdir(backtest_results_dir):
@@ -193,7 +192,7 @@ def run():
     st.session_state.setdefault("folderhash_map_initialized", False)
     st.session_state.setdefault("selected_backtest_folder_name", None)
 
-    BACKTEST_RESULTS_FOLDERPATH = "../Optiverse/backtest_results"
+    BACKTEST_RESULTS_FOLDERPATH = "../Optiverse/backtest_results/weekly_straddle"
     # Build the folderhash → foldername map only once
     if st.session_state.folderhash_map_initialized is False:
         st.session_state.folderhash_to_foldername_map = get_folderhash_to_foldername_map(BACKTEST_RESULTS_FOLDERPATH)
@@ -257,29 +256,29 @@ def run():
     with col_folder_hash:
         labeled_box(title="Backtest Folder Hash", value=backtest_analyzer.folder_hash)
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     ############################
     #### CONFIGS and ABOUT #####
     ############################
 
-    strategy_config = backtest_analyzer.get_strategy_config().as_dict()
-    backtester_config = backtest_analyzer.get_backtester_config().as_dict()
-    about_strategy = backtest_analyzer.get_about()
+    # strategy_config = backtest_analyzer.get_strategy_config().as_dict()
+    # backtester_config = backtest_analyzer.get_backtester_config().as_dict()
+    # about_strategy = backtest_analyzer.get_about()
 
-    # Two main columns: left (configs), right (about)
-    info_box("Configs and Strategy Description")
-    with st.expander("Expand to see Backtester and Strategy Configs and Detailed Strategy Description", expanded=False):
-        left_col, right_col = st.columns([1, 3])
-        with left_col:
-            st.subheader("📊 Backtest Config")
-            st.write(backtester_config)
-            st.subheader("📊 Strategy Config")
-            st.write(strategy_config)
-        with right_col:
-            st.subheader("📊 About Strategy")
-            rows_left = len(backtester_config) + len(strategy_config) + 5
-            st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
-        st.markdown("---")
+    # # Two main columns: left (configs), right (about)
+    # info_box("Configs and Strategy Description")
+    # with st.expander("Expand to see Backtester and Strategy Configs and Detailed Strategy Description", expanded=False):
+    #     left_col, right_col = st.columns([1, 3])
+    #     with left_col:
+    #         st.subheader("📊 Backtest Config")
+    #         st.write(backtester_config)
+    #         st.subheader("📊 Strategy Config")
+    #         st.write(strategy_config)
+    #     with right_col:
+    #         st.subheader("📊 About Strategy")
+    #         rows_left = len(backtester_config) + len(strategy_config) + 5
+    #         st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
+    #     st.markdown("---")
 
     ############################
     ############################
@@ -344,16 +343,16 @@ def run():
     #############################################################################
     ###### COUNT STATS ##########################################################
     #############################################################################
-    
+
     count_metrics = ['total_days', 'positive_days', 'negative_days', 'win_rate', 'max_win_streak', 'max_loss_streak', 'highest_return', 'lowest_return']
     cols = st.columns([1]*len(count_metrics))
     for col, metric in zip(cols, count_metrics):
         with col:
             labeled_box_with_help(title=metric.replace("_", " ").title(),
-                                  value=f"{backtest_metrics[metric]['value']:.4f}" if isinstance(backtest_metrics[metric]['value'], float) else f"{backtest_metrics[metric]['value']}", 
+                                  value=f"{backtest_metrics[metric]['value']:.4f}" if isinstance(backtest_metrics[metric]['value'], float) else f"{backtest_metrics[metric]['value']}",
                                   help_text=backtest_metrics[metric]['help'])
     # st.markdown("<br>", unsafe_allow_html=True)
-    
+
     #############################################################################
     #############################################################################
 
@@ -367,10 +366,10 @@ def run():
     for col, metric in zip(cols, ratio_metrics):
         with col:
             labeled_box_with_help(title=metric.replace("_", " ").title(),
-                                  value=f"{backtest_metrics[metric]['value']:.4f}" if isinstance(backtest_metrics[metric]['value'], float) else f"{backtest_metrics[metric]['value']}", 
+                                  value=f"{backtest_metrics[metric]['value']:.4f}" if isinstance(backtest_metrics[metric]['value'], float) else f"{backtest_metrics[metric]['value']}",
                                   help_text=backtest_metrics[metric]['help'])
     st.markdown("<br>", unsafe_allow_html=True)
-    
+
     #############################################################################
     #############################################################################
 
@@ -408,7 +407,7 @@ def run():
     with col_plot_drawdown:
         matplotlib_fig = qs.plots.drawdowns_periods(returns=df_portfolio_metrics_daily['daily_return'], periods=5, figsize=(10,5), show=False)
         st.pyplot(matplotlib_fig, use_container_width=True)
-    
+
     #############################################################################
     #############################################################################
 
@@ -416,7 +415,7 @@ def run():
     #############################################################################
     ###### WEEKLY STATS #######################################################
     #############################################################################
-    
+
 
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -432,7 +431,7 @@ def run():
     st.markdown("<br>", unsafe_allow_html=True)
     df_weekly = df_weekly.rename(columns={'daily_return': 'weekly_return'})
     df_weekly['weekly_return_pct'] = df_weekly['weekly_return'] * 100
-    
+
     weekly_stats_avg = {
         "Total Weeks": len(df_weekly),
         "Mean Return (%)": round(df_weekly['weekly_return_pct'].mean(), 2),
