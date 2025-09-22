@@ -8,20 +8,20 @@ import json
 # BaseConfig: common save/load
 # ------------------------------
 
-class BaseConfig(BaseModel):
 
-    model_config = {"arbitrary_types_allowed": True}
+class BaseConfig(BaseModel):
+    model_config = {'arbitrary_types_allowed': True}
 
     def save(self, filepath: str):
-        with open(filepath, "wb") as f:
+        with open(filepath, 'wb') as f:
             pickle.dump(self, f)
 
     @classmethod
     def load(cls, filepath: str):
-        with open(filepath, "rb") as f:
+        with open(filepath, 'rb') as f:
             obj = pickle.load(f)
         if not isinstance(obj, cls):
-            raise TypeError(f"Expected {cls.__name__}, got {type(obj).__name__}")
+            raise TypeError(f'Expected {cls.__name__}, got {type(obj).__name__}')
         return obj
 
     def as_str(self):
@@ -36,11 +36,13 @@ class BaseConfig(BaseModel):
         """
         return self.model_dump()
 
+
 #########################################################################################
 # ------------------------------
 # STRATEGY Configs
 # ------------------------------
 #########################################################################################
+
 
 class StraddleConfig(BaseConfig):
     name: str
@@ -55,15 +57,16 @@ class StraddleConfig(BaseConfig):
     call_order_type: str = None
     put_order_type: str = None
 
-    @field_validator("entry_time", "exit_time", mode="before")
+    @field_validator('entry_time', 'exit_time', mode='before')
     def parse_time(cls, v):
-        return datetime.strptime(v, "%H:%M:%S").time()
+        return datetime.strptime(v, '%H:%M:%S').time()
 
-    @model_validator(mode="after")
+    @model_validator(mode='after')
     def make_order_types(self):
         self.call_order_type = 'market_stoploss_trail' if self.trail_call_risk else 'market_stoploss'
         self.put_order_type = 'market_stoploss_trail' if self.trail_put_risk else 'market_stoploss'
         return self
+
 
 class WeeklyStraddleConfig(BaseConfig):
     name: str
@@ -78,26 +81,25 @@ class WeeklyStraddleConfig(BaseConfig):
     call_order_type: str = None
     put_order_type: str = None
 
-    @field_validator("entry_time", "exit_time", mode="before")
+    @field_validator('entry_time', 'exit_time', mode='before')
     def parse_time(cls, v):
-        return datetime.strptime(v, "%H:%M:%S").time()
+        return datetime.strptime(v, '%H:%M:%S').time()
 
-    @model_validator(mode="after")
+    @model_validator(mode='after')
     def make_order_types(self):
         self.call_order_type = 'market_stoploss_trail' if self.trail_call_risk else 'market_stoploss'
         self.put_order_type = 'market_stoploss_trail' if self.trail_put_risk else 'market_stoploss'
         return self
 
-STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {
-    "straddle": StraddleConfig,
-    "weekly_straddle": WeeklyStraddleConfig
-}
+
+STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {'straddle': StraddleConfig, 'weekly_straddle': WeeklyStraddleConfig}
 
 ###############################################################
 # ------------------------------
 # Backtester Configs
 # ------------------------------
 ###############################################################
+
 
 class BaseBacktesterConfig(BaseConfig):
     name: str
@@ -107,10 +109,11 @@ class BaseBacktesterConfig(BaseConfig):
     results_dir: str
     lot_size: int
 
-    @field_validator("start_date", "end_date", mode="before")
+    @field_validator('start_date', 'end_date', mode='before')
     def parse_dates(cls, v):
         return pd.Timestamp(v).date()
 
+
 BACKTESTER_NAME_TO_BACKTESTER_CONFIG_MAP = {
-    "base_backtester": BaseBacktesterConfig,
+    'base_backtester': BaseBacktesterConfig,
 }

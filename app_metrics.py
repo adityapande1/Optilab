@@ -2,18 +2,14 @@ import streamlit as st
 import markdown
 from streamlit.components.v1 import html
 
-def run():
 
+def run():
     # Load Markdown file
-    with open("./docs/metrics.md", "r", encoding="utf-8") as f:
+    with open('./docs/metrics.md', 'r', encoding='utf-8') as f:
         md_text = f.read()
 
-
     # Convert Markdown to HTML with syntax highlighting
-    html_content = markdown.markdown(
-        md_text,
-        extensions=["fenced_code", "tables", "codehilite"]
-    )
+    html_content = markdown.markdown(md_text, extensions=['fenced_code', 'tables', 'codehilite'])
 
     # GitHub-like styling + GitHub’s own code theme
     styled_html = f"""

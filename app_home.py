@@ -8,8 +8,9 @@ import base64
 import os
 import streamlit.components.v1 as components
 
+
 def run():
-    st.markdown("---")
+    st.markdown('---')
     # Elegant Minimal (Apple-like clean, grey tone)
     st.markdown(
         """
@@ -17,46 +18,21 @@ def run():
             Optilab : A <span style="color:#da1a78; font-style:italic;">gajodhar.ai</span> enterprise
         </h1>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-    st.markdown("---")
+    st.markdown('---')
 
     info_text = {
-        'malya' : {
-            'image_path': './metadata/home/malya.png',
-            'quote': '“You can call me a playboy, you can call me a thief, but don’t call me small. <br> ~Vijay Malya'
-
-        },
-
-        'mehta' : {
-            'image_path': './metadata/home/mehta.png',
-            'quote': '“Risk hai toh ishq hai." <br> ~Harshad Mehta'
-        },
-
-        'elizabeth' : {
+        'malya': {'image_path': './metadata/home/malya.png', 'quote': '“You can call me a playboy, you can call me a thief, but don’t call me small. <br> ~Vijay Malya'},
+        'mehta': {'image_path': './metadata/home/mehta.png', 'quote': '“Risk hai toh ishq hai." <br> ~Harshad Mehta'},
+        'elizabeth': {
             'image_path': './metadata/home/elizabeth.png',
-            'quote': '“The minute that you have a backup plan, you’ve admitted you’re not going to succeed." <br> ~Elizabeth Holmes (Sherlocks Sister)'
+            'quote': '“The minute that you have a backup plan, you’ve admitted you’re not going to succeed." <br> ~Elizabeth Holmes (Sherlocks Sister)',
         },
-
-        'subrata' : {
-            'image_path': './metadata/home/subrata.png',
-            'quote': '“I have always believed in the power of the common man." <br> ~Subrata Roy'
-        },
-
-        'jordan' : {
-            'image_path': './metadata/home/jordan.png',
-            'quote': '“Act as if! Act as if you are a wealthy man, rich already, and then you will surely become rich." <br> ~Jordan Belfort'
-        },
-
-        'nino' : {
-            'image_path': './metadata/home/nino.png',
-            'quote': '“Pande ka dick is SIGNIFICANTLY bigger than mine there is no doubt about it." <br> ~NINO'
-        },
-
-        'pandoo' : {
-            'image_path': './metadata/home/pandoo.png',
-            'quote': '“Nino is just being kind. He is right though." <br> ~PANDOO'
-        }
+        'subrata': {'image_path': './metadata/home/subrata.png', 'quote': '“I have always believed in the power of the common man." <br> ~Subrata Roy'},
+        'jordan': {'image_path': './metadata/home/jordan.png', 'quote': '“Act as if! Act as if you are a wealthy man, rich already, and then you will surely become rich." <br> ~Jordan Belfort'},
+        'nino': {'image_path': './metadata/home/nino.png', 'quote': '“Pande ka dick is SIGNIFICANTLY bigger than mine there is no doubt about it." <br> ~NINO'},
+        'pandoo': {'image_path': './metadata/home/pandoo.png', 'quote': '“Nino is just being kind. He is right though." <br> ~PANDOO'},
     }
 
     image_paths = []
@@ -67,16 +43,16 @@ def run():
 
     # Convert images to base64 for embedding
     def get_base64_of_image(img_path):
-        with open(img_path, "rb") as f:
+        with open(img_path, 'rb') as f:
             data = f.read()
         return base64.b64encode(data).decode()
 
     images_base64 = [get_base64_of_image(img) for img in image_paths]
 
     # Build the slides HTML dynamically
-    slides_html = ""
+    slides_html = ''
     for i, (img_b64, text) in enumerate(zip(images_base64, image_texts)):
-        active_class = "active" if i == 0 else ""
+        active_class = 'active' if i == 0 else ''
         slides_html += f"""
         <div class="mySlides {active_class}">
             <div class="slide-content">
@@ -180,4 +156,3 @@ def run():
 
     # Render inside Streamlit properly
     components.html(html_code, height=920)
-

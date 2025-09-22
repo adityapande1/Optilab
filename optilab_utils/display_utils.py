@@ -1,9 +1,11 @@
 import streamlit as st
 
+
 def display_page_title(title, about, about_fontsize=28):
-    st.markdown("---")
-    st.markdown(f"# {title}")
-    st.markdown(f"""
+    st.markdown('---')
+    st.markdown(f'# {title}')
+    st.markdown(
+        f"""
                 <p style="
                     color: #da1b78;
                     font-size: {about_fontsize}px;
@@ -17,9 +19,10 @@ def display_page_title(title, about, about_fontsize=28):
                 ">
                     {about}
                 </p>
-                """, unsafe_allow_html=True)
-    st.markdown("---")
-
+                """,
+        unsafe_allow_html=True,
+    )
+    st.markdown('---')
 
 
 box_style_small = """
@@ -38,26 +41,23 @@ box_style_small = """
 """
 
 
-
 def display_backtest_details(backtest_analyzer):
-
     strategy_config = backtest_analyzer.get_strategy_config().as_dict()
     backtester_config = backtest_analyzer.get_backtester_config().as_dict()
     about_strategy = backtest_analyzer.get_about()
-    st.markdown("## Configuration Details")
+    st.markdown('## Configuration Details')
     # Two main columns: left (configs), right (about)
-    with st.expander("⚙️ Expand to view Backtest configs and strategy details", expanded=False):
+    with st.expander('⚙️ Expand to view Backtest configs and strategy details', expanded=False):
         left_col, right_col = st.columns([1, 3])
         with left_col:
-            st.subheader("📊 Backtest Config")
+            st.subheader('📊 Backtest Config')
             st.write(backtester_config)
-            st.subheader("📊 Strategy Config")
+            st.subheader('📊 Strategy Config')
             st.write(strategy_config)
 
         with right_col:
-            st.subheader("📊 About Strategy")
+            st.subheader('📊 About Strategy')
             rows_left = len(backtester_config) + len(strategy_config) + 5
-            st.text_area("", value=about_strategy, height=29*rows_left, label_visibility="collapsed")
+            st.text_area('', value=about_strategy, height=29 * rows_left, label_visibility='collapsed')
 
     st.divider()
-

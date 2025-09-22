@@ -1,7 +1,8 @@
 import os, sys
 import shutil
-def main():
 
+
+def main():
     # '../Optiverse/backtest_results/AbhisResults'
     optiverse_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'Optiverse'))
     this_dir = os.path.abspath(os.path.dirname(__file__))
@@ -23,17 +24,17 @@ def main():
         dest_folder = os.path.join(this_dir, os.path.basename(folder))
         if os.path.exists(dest_folder):
             shutil.rmtree(dest_folder)  # Remove existing destination folder
-        os.system(f"cp -r {folder} {dest_folder}")  # Copy and even rewrite if exists
+        os.system(f'cp -r {folder} {dest_folder}')  # Copy and even rewrite if exists
         folders_copied.append(dest_folder)
 
     # Git commit and push changes only the above folders that were copied from optiverse
-    os.system("git add " + " ".join(folders_copied))
+    os.system('git add ' + ' '.join(folders_copied))
     os.system("git commit -m 'Updated Optiverse folders'")
-    os.system("git push")
+    os.system('git push')
 
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied folders from Optiverse and pushed to git ".center(70) + "#"*5)
-    print("#"*80 + "\n")
+    print('\n' + '#' * 80)
+    print('#' * 5 + ' Copied folders from Optiverse and pushed to git '.center(70) + '#' * 5)
+    print('#' * 80 + '\n')
     ###########################################################################################
     ###########################################################################################
 
@@ -102,9 +103,9 @@ def main():
 
     # Copy database files
     shutil.copytree(original_database_folder, this_dir_database_folder, dirs_exist_ok=True)
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied database folder from Optiverse ".center(70) + "#"*5)
-    print("#"*80 + "\n")
+    print('\n' + '#' * 80)
+    print('#' * 5 + ' Copied database folder from Optiverse '.center(70) + '#' * 5)
+    print('#' * 80 + '\n')
     ###########################################################################################
     ###########################################################################################
 
@@ -115,19 +116,18 @@ def main():
     this_dir_py_file_path = os.path.join(this_dir, 'constants.py')
     shutil.copy2(original_py_file_path, this_dir_py_file_path)
 
-
     # Git commit and push changes only the above folders that were copied from optiverse
-    os.system(f"git add {this_dir_py_file_path}")
+    os.system(f'git add {this_dir_py_file_path}')
     os.system("git commit -m 'Updated Constants.py'")
-    os.system("git push")
+    os.system('git push')
 
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied .py files from Optiverse ".center(70) + "#"*5)
-    print("#"*80 + "\n")
+    print('\n' + '#' * 80)
+    print('#' * 5 + ' Copied .py files from Optiverse '.center(70) + '#' * 5)
+    print('#' * 80 + '\n')
     ###########################################################################################
     ###########################################################################################
 
 
-if __name__ == "__main__":
-    '''This is to be run periodically, so that the code changes in Optiverse are reflected in this directory.'''
+if __name__ == '__main__':
+    """This is to be run periodically, so that the code changes in Optiverse are reflected in this directory."""
     main()

@@ -13,7 +13,7 @@ class WeeklyStraddle(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)
 
-        assert self.config.long_or_short in ["long", "short"], f"Position must be either 'long' or 'short'. Given {self.config.long_or_short}"
+        assert self.config.long_or_short in ['long', 'short'], f"Position must be either 'long' or 'short'. Given {self.config.long_or_short}"
 
         # Straddle Params
         self.name = self.__class__.__name__
@@ -23,7 +23,6 @@ class WeeklyStraddle(Strategy):
         self.latest_entry_timestamp = None
 
     def _get_entry_ts_to_exit_ts_map(self) -> dict[pd.Timestamp, pd.Timestamp]:
-
         entry_ts_to_exit_ts_map = {}
         df_spot = self.dbconnector.df_spot
         all_available_expiry_dates = self.dbconnector.get_all_available_expiry_dates()
@@ -42,15 +41,17 @@ class WeeklyStraddle(Strategy):
         return entry_ts_to_exit_ts_map
 
     def action(self, timestamp: pd.Timestamp) -> list[Action] | None:
-
         actions = None
 
         if timestamp in self.entry_ts_to_exit_ts_map:
-
             self.strike = self.dbconnector.get_ATM_strike(timestamp)
             closest_expiry = self.dbconnector.get_closest_expiry(timestamp)
-            atm_call_action = Action(option_type="CE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type=self.config.call_order_type, stoploss=self.config.call_risk)
-            atm_put_action = Action(option_type="PE", strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type=self.config.put_order_type, stoploss=self.config.put_risk)
+            atm_call_action = Action(
+                option_type='CE', strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type=self.config.call_order_type, stoploss=self.config.call_risk
+            )
+            atm_put_action = Action(
+                option_type='PE', strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type=self.config.put_order_type, stoploss=self.config.put_risk
+            )
             actions = [atm_call_action, atm_put_action]
             self.latest_entry_timestamp = timestamp
 
@@ -61,6 +62,5 @@ class WeeklyStraddle(Strategy):
         return actions
 
     def about(self) -> str:
-        about_str = "Weekly Straddle Strategy"
+        about_str = 'Weekly Straddle Strategy'
         return about_str
-
