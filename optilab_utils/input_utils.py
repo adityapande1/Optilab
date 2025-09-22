@@ -1,8 +1,10 @@
 import os
-import streamlit as st
 from typing import List
 
-def input_backtest_folder_and_hash(backtest_foldernames: List[str], hash_to_folder_map: dict, folder_to_hash_map: dict) -> (str, str):
+import streamlit as st
+
+
+def get_backtest_folder_and_hash_input(backtest_foldernames: List[str], hash_to_folder_map: dict, folder_to_hash_map: dict) -> (str, str):
 
     st.markdown("### [ Select Backtest folder ]  OR [ Enter hash directly ] -- Note : Hash takes priority")
 

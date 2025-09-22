@@ -16,6 +16,7 @@ def main():
         os.path.join(optiverse_dir, 'strategy'),
         os.path.join(optiverse_dir, 'backtest'),
         os.path.join(optiverse_dir, 'docs'),
+        os.path.join(optiverse_dir, 'configs'),
     ]
     folders_copied = []
     for folder in folders_to_copy_from_optiverse:
@@ -39,48 +40,48 @@ def main():
     ###########################################################################################
     ### 2. Copy the last <num_backtests_to_copy> backtest_results from Optiverse and commit ###
     ###########################################################################################
-    # original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results', 'AbhisResults')
-    original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results')
-    this_dir_backtest_folder = os.path.join(this_dir, 'backtest_results')
-    os.makedirs(this_dir_backtest_folder, exist_ok=True)
-    # Remove all contents in the backtest results folder
-    for f in os.listdir(this_dir_backtest_folder):
-        path = os.path.join(this_dir_backtest_folder, f)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
+    # # original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results', 'AbhisResults')
+    # original_backtest_folder = os.path.join(optiverse_dir, 'backtest_results')
+    # this_dir_backtest_folder = os.path.join(this_dir, 'backtest_results')
+    # os.makedirs(this_dir_backtest_folder, exist_ok=True)
+    # # Remove all contents in the backtest results folder
+    # for f in os.listdir(this_dir_backtest_folder):
+    #     path = os.path.join(this_dir_backtest_folder, f)
+    #     if os.path.isdir(path):
+    #         shutil.rmtree(path)
+    #     else:
+    #         os.remove(path)
 
-    # Commit and push changes
-    if True:
-        os.system("git add -A")  # stage deletions and modifications
-        os.system("git commit -m 'Removed previous backtest results'")
-        os.system("git push")
+    # # Commit and push changes
+    # if True:
+    #     os.system("git add -A")  # stage deletions and modifications
+    #     os.system("git commit -m 'Removed previous backtest results'")
+    #     os.system("git push")
 
-    num_backtests_to_copy = 20  # The number of backtests to copy from original source
+    # num_backtests_to_copy = 20  # The number of backtests to copy from original source
 
-    # Get last N backtests
-    all_backtest = sorted(
-        [f for f in os.listdir(original_backtest_folder)]
-    )[-num_backtests_to_copy:]
+    # # Get last N backtests
+    # all_backtest = sorted(
+    #     [f for f in os.listdir(original_backtest_folder)]
+    # )[-num_backtests_to_copy:]
 
-    # Copy folders and add to git
-    for backtest in all_backtest:
-        src = os.path.join(original_backtest_folder, backtest)
-        dest = os.path.join(this_dir_backtest_folder, backtest)
-        # Skip if not a directory (e.g. .DS_Store)
-        if not os.path.isdir(src):
-            continue
-        shutil.copytree(src, dest, dirs_exist_ok=True)  # overwrite if exists
-        os.system(f"git add 'backtest_results/{backtest}'")
+    # # Copy folders and add to git
+    # for backtest in all_backtest:
+    #     src = os.path.join(original_backtest_folder, backtest)
+    #     dest = os.path.join(this_dir_backtest_folder, backtest)
+    #     # Skip if not a directory (e.g. .DS_Store)
+    #     if not os.path.isdir(src):
+    #         continue
+    #     shutil.copytree(src, dest, dirs_exist_ok=True)  # overwrite if exists
+    #     os.system(f"git add 'backtest_results/{backtest}'")
 
-    # Commit and push
-    os.system("git commit -m 'Updated Optiverse backtest results'")
-    os.system("git push")
+    # # Commit and push
+    # os.system("git commit -m 'Updated Optiverse backtest results'")
+    # os.system("git push")
 
-    print("\n" + "#"*80)
-    print("#"*5 + " Copied backtest results from Optiverse and pushed to git ".center(70) + "#"*5)
-    print("#"*80 + "\n")
+    # print("\n" + "#"*80)
+    # print("#"*5 + " Copied backtest results from Optiverse and pushed to git ".center(70) + "#"*5)
+    # print("#"*80 + "\n")
     ###########################################################################################
     ###########################################################################################
 
@@ -108,7 +109,7 @@ def main():
     ###########################################################################################
 
     ###########################################################################################
-    ### 4. Copy paste .py files 
+    ### 4. Copy paste .py files
     ###########################################################################################
     original_py_file_path = os.path.join(optiverse_dir, 'constants.py')
     this_dir_py_file_path = os.path.join(this_dir, 'constants.py')

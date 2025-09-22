@@ -3,7 +3,7 @@ from app_daily_pnl2 import run as run_daily_pnl
 from app_evaluate_strategy import run as run_evaluate_strategy
 from app_home import run as run_home
 from app_nifty_stats import run as run_nifty_stats
-from app_visualize_strategy import run as run_visualize_strategy
+from app_visualize_strategy2 import run as run_visualize_strategy
 from app_compare_strategies import run as run_compare_strategies
 
 # --- Wide page setting filling complete window ---

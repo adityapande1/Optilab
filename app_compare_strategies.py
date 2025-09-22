@@ -1,17 +1,17 @@
 import os
-import streamlit as st
-from optilab_constants import BACKTEST_RESULTS_FOLDERPATH
-import streamlit as st
 from typing import List
-from backtest.backtest_analyzer import BacktestAnalyzer
-
-from optilab_utils.display_utils import display_page_title, display_backtest_details
-from optilab_utils.file_utils import get_all_folders_in_directory, get_backtest_directory_maps
-from optilab_utils.input_utils import input_backtest_folder_and_hash
 
 import pandas as pd
 import streamlit as st
 from numpy.random import default_rng as rng
+
+from backtest.backtest_analyzer import BacktestAnalyzer
+from optilab_constants import BACKTEST_RESULTS_FOLDERPATH
+from optilab_utils.display_utils import (display_backtest_details,
+                                         display_page_title)
+from optilab_utils.file_utils import (get_all_folders_in_directory,
+                                      get_backtest_directory_maps)
+from optilab_utils.input_utils import get_backtest_folder_and_hash_input
 
 
 def run():
@@ -24,7 +24,7 @@ def run():
 
     st.session_state.setdefault("folderhashes_to_compare", [])
 
-    selected_foldername, selected_folderhash = input_backtest_folder_and_hash(backtest_foldernames, folderhash_to_foldername_map, foldername_to_folderhash_map)
+    selected_foldername, selected_folderhash = get_backtest_folder_and_hash_input(backtest_foldernames, folderhash_to_foldername_map, foldername_to_folderhash_map)
 
     if selected_foldername is not None:
         backtest_analyzer = BacktestAnalyzer(backtest_results_dir=BACKTEST_RESULTS_FOLDERPATH, backtest_folder_name=selected_foldername)

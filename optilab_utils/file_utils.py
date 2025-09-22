@@ -1,6 +1,7 @@
 import os
 import streamlit as st
 
+@st.cache_data
 def get_all_folders_in_directory(directory):
     try:
         return [f for f in os.listdir(directory) if os.path.isdir(os.path.join(directory, f))]
@@ -8,10 +9,8 @@ def get_all_folders_in_directory(directory):
         st.error(f"Directory not found: {directory}")
         return []
 
-
-# Cache the mapping functions to avoid recomputation
 @st.cache_data
-def get_backtest_directory_maps(backtest_results_dir):
+def get_backtest_directory_maps(backtest_results_dir: str) -> tuple[dict, dict]:
 
     foldername_to_folderhash_map, folderhash_to_foldername_map = {}, {}
     backtest_foldernames = get_all_folders_in_directory(backtest_results_dir)
