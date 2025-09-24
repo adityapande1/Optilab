@@ -31,6 +31,12 @@ class BaseConfig(BaseModel):
         """
         return json.dumps(self.model_dump(), sort_keys=True, default=str)
 
+    def as_dict(self):
+        """
+        Returns a dictionary representation of the config.
+        """
+        return self.model_dump()
+
 
 #########################################################################################
 # ------------------------------
