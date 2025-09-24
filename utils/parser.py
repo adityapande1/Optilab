@@ -71,25 +71,93 @@ class Parser:
 
         # --- Common args ---
         # Backtest configuration
-        self.parser.add_argument('--start_date', type=str, default='2024-01-01', metavar='YYYY-MM-DD', help='Backtest start date')
-        self.parser.add_argument('--end_date', type=str, default='2025-08-28', metavar='YYYY-MM-DD', help='Backtest end date')
-        self.parser.add_argument('--per_lot_transaction_cost', type=float, default=40.0, metavar='₹', help='Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)')
-        self.parser.add_argument('--results_dir', type=str, required=False, metavar='FOLDER NAME', help='Directory to save backtest results')
+        self.parser.add_argument(
+            '--start_date',
+            type=str,
+            default='2024-01-01',
+            metavar='YYYY-MM-DD',
+            help='Backtest start date',
+        )
+        self.parser.add_argument(
+            '--end_date',
+            type=str,
+            default='2025-08-28',
+            metavar='YYYY-MM-DD',
+            help='Backtest end date',
+        )
+        self.parser.add_argument(
+            '--per_lot_transaction_cost',
+            type=float,
+            default=40.0,
+            metavar='₹',
+            help='Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)',
+        )
+        self.parser.add_argument(
+            '--results_dir',
+            type=str,
+            required=False,
+            metavar='FOLDER NAME',
+            help='Directory to save backtest results',
+        )
         # Common strategy configuration
-        self.parser.add_argument('--strategy', type=str, choices=['straddle'], default='straddle', help='Strategy to use')
-        self.parser.add_argument('--entry_time', type=str, default='9:15:00', metavar='HH:MM:SS', help='Time to enter positions each day')
-        self.parser.add_argument('--exit_time', type=str, default='15:20:00', metavar='HH:MM:SS', help='Time to forcefully exit all positions each day')
+        self.parser.add_argument(
+            '--strategy',
+            type=str,
+            choices=['straddle'],
+            default='straddle',
+            help='Strategy to use',
+        )
+        self.parser.add_argument(
+            '--entry_time',
+            type=str,
+            default='9:15:00',
+            metavar='HH:MM:SS',
+            help='Time to enter positions each day',
+        )
+        self.parser.add_argument(
+            '--exit_time',
+            type=str,
+            default='15:20:00',
+            metavar='HH:MM:SS',
+            help='Time to forcefully exit all positions each day',
+        )
         self.parser.add_argument('--lot_size', type=int, default=75, help='Lot size for trading')
         # ------------------
 
         # --- Straddle args ---
         # Call leg configuration
         straddle_group = self.parser.add_argument_group('straddle')
-        straddle_group.add_argument('--straddle_call_risk', type=float, default=float('inf'), metavar='₹', help='Risk for the call leg in a straddle (₹). The leg gets cut if this risk is breached.')
-        straddle_group.add_argument('--trail_call_risk', action='store_true', help='Whether to trail the stoploss risk for the call leg.')
-        straddle_group.add_argument('--straddle_put_risk', type=float, default=float('inf'), metavar='₹', help='Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.')
-        straddle_group.add_argument('--trail_put_risk', action='store_true', help='Whether to trail the stoploss risk for the put leg.')
-        straddle_group.add_argument('--straddle_long_or_short', type=str, choices=['long', 'short'], default='short', help='Direction of the straddle position')
+        straddle_group.add_argument(
+            '--straddle_call_risk',
+            type=float,
+            default=float('inf'),
+            metavar='₹',
+            help='Risk for the call leg in a straddle (₹). The leg gets cut if this risk is breached.',
+        )
+        straddle_group.add_argument(
+            '--trail_call_risk',
+            action='store_true',
+            help='Whether to trail the stoploss risk for the call leg.',
+        )
+        straddle_group.add_argument(
+            '--straddle_put_risk',
+            type=float,
+            default=float('inf'),
+            metavar='₹',
+            help='Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.',
+        )
+        straddle_group.add_argument(
+            '--trail_put_risk',
+            action='store_true',
+            help='Whether to trail the stoploss risk for the put leg.',
+        )
+        straddle_group.add_argument(
+            '--straddle_long_or_short',
+            type=str,
+            choices=['long', 'short'],
+            default='short',
+            help='Direction of the straddle position',
+        )
         # -------------------
 
     def parse_args(self):
@@ -97,7 +165,13 @@ class Parser:
         return self.args
 
     def get_backtest_config(self):
-        return ReadOnlyConfig({'start_date': pd.Timestamp(self.args.start_date), 'end_date': pd.Timestamp(self.args.end_date), 'per_lot_transaction_cost': self.args.per_lot_transaction_cost})
+        return ReadOnlyConfig(
+            {
+                'start_date': pd.Timestamp(self.args.start_date),
+                'end_date': pd.Timestamp(self.args.end_date),
+                'per_lot_transaction_cost': self.args.per_lot_transaction_cost,
+            }
+        )
 
     # --- Config getters ---
     def get_straddle_config(self):

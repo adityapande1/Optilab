@@ -3,14 +3,14 @@ Analyzes the any backtest result folder and provides easy access to the data and
 """
 
 import os
-from altair import value
-import pandas as pd
-from streamlit import json
-from constants import BACKTEST_RESULTS_FOLDERPATH
-from utils.data_utils import read_parquet_data
 import pickle
-from strategy import Action
+import pandas as pd
+from altair import value
+from streamlit import json
 from configs.config_schemas import BaseConfig
+from constants import BACKTEST_RESULTS_FOLDERPATH
+from strategy import Action
+from utils.data_utils import read_parquet_data
 
 
 class BacktestAnalyzer:
@@ -110,21 +110,19 @@ class BacktestAnalyzer:
             return False
 
         # Compare folder hashes
-        # is_folder_hash_same = (self.folder_hash == btanalyzer_other.folder_hash)
-        # if verbose:
-        #     print(f"Folder hash match: {is_folder_hash_same}")
+        is_folder_hash_same = self.folder_hash == btanalyzer_other.folder_hash
+        if verbose:
+            print(f'Folder hash match: {is_folder_hash_same}')
 
-        # # Compare strategy configs
-        # is_strategy_config_same = (self.get_strategy_config() == btanalyzer_other.get_strategy_config())
-        # if verbose:
-        #     print(f"Strategy config match: {is_strategy_config_same}")
+        # Compare strategy configs
+        is_strategy_config_same = self.get_strategy_config() == btanalyzer_other.get_strategy_config()
+        if verbose:
+            print(f'Strategy config match: {is_strategy_config_same}')
 
-        # # Compare backtester configs
-        # is_backtester_config_same = (self.get_backtester_config() == btanalyzer_other.get_backtester_config())
-        # if verbose:
-        #     print(f"Backtester config match: {is_backtester_config_same}")
-
-        is_folder_hash_same, is_strategy_config_same, is_backtester_config_same = True, True, True  # Skipping these checks for now to focus on data checks
+        # Compare backtester configs
+        is_backtester_config_same = self.get_backtester_config() == btanalyzer_other.get_backtester_config()
+        if verbose:
+            print(f'Backtester config match: {is_backtester_config_same}')
 
         # Compare action hashes
         are_action_hashes_same = self.action_hashes == btanalyzer_other.action_hashes
@@ -170,12 +168,12 @@ class BacktestAnalyzer:
             if verbose:
                 if not (df_position_self.equals(df_position_other)):
                     print(f'Position hash {position_hash} match: False')
-        are_all_positions_same = all(position_checks)
+        are_all_position_dataframes_same = all(position_checks)
         if verbose:
-            if are_all_positions_same:
-                print(f'All positions match: {are_all_positions_same}')
+            if are_all_position_dataframes_same:
+                print(f'All positions match: {are_all_position_dataframes_same}')
             else:
-                print(f'Not all positions match: {are_all_positions_same}')
+                print(f'Not all positions match: {are_all_position_dataframes_same}')
 
         # Finally compare the df_portfolio_metrics
         df_portfolio_self = self.get_df_portfolio_metrics().round(round_decimals).copy()
@@ -191,6 +189,6 @@ class BacktestAnalyzer:
             and are_action_hashes_same
             and are_position_hashes_same
             and are_all_actions_same
-            and are_all_positions_same
+            and are_all_position_dataframes_same
             and is_df_portfolio_same
         )

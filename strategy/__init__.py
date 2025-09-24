@@ -32,7 +32,12 @@ class Action:
         assert self.option_type in ('CE', 'PE'), "option_type must be 'CE' or 'PE'"
         assert isinstance(self.num_lots, int) and self.num_lots > 0, 'num_lots must be a positive integer'
         assert self.trade_type in ('long', 'short'), "trade_type must be 'long' or 'short'"
-        assert self.order_type in ('market', 'limit', 'market_stoploss', 'market_stoploss_trail'), "order_type must be 'market', 'limit', 'market_stoploss', or 'market_stoploss_trail'"
+        assert self.order_type in (
+            'market',
+            'limit',
+            'market_stoploss',
+            'market_stoploss_trail',
+        ), "order_type must be 'market', 'limit', 'market_stoploss', or 'market_stoploss_trail'"
         if self.order_type == 'limit':
             assert self.limit_price is not None, 'limit_price must be specified for limit orders'
         if self.order_type in ('market_stoploss', 'market_stoploss_trail'):
@@ -126,7 +131,42 @@ class Action:
 
 
 class Strategy(ABC):
-    """Base class for all trading strategies."""
+    """Base class for all trading strategies.
+
+    Example for `self.position`
+    -------
+    >>> self.position
+    [
+    ...     {
+    ...         'hash': 7435533710701754627,
+    ...         'timestamp': Timestamp('2024-01-01 09:15:00'),
+    ...         'action': Action(option_type='PE', strike=21700, trade_type='short',
+    ...                          expiry='2024-01-04', order_type='market_stoploss',
+    ...                          num_lots=1, limit_price=None, lot_type='full',
+    ...                          lot_idx=1, square_off_id=None, stoploss=inf,
+    ...                          target=None),
+    ...         'trade_type': 'short',
+    ...         'price': 110.85,
+    ...         'stoploss_price_level': inf,
+    ...         'stoploss_hit_timestamp': None,
+    ...         'status': 'filled'
+    ...     },
+    ...     {
+    ...         'hash': 2132882707902098704,
+    ...         'timestamp': Timestamp('2024-01-01 09:15:00'),
+    ...         'action': Action(option_type='CE', strike=21700, trade_type='short',
+    ...                          expiry='2024-01-04', order_type='market_stoploss',
+    ...                          num_lots=1, limit_price=None, lot_type='full',
+    ...                          lot_idx=1, square_off_id=None, stoploss=inf,
+    ...                          target=None),
+    ...         'trade_type': 'short',
+    ...         'price': 137.45,
+    ...         'stoploss_price_level': inf,
+    ...         'stoploss_hit_timestamp': None,
+    ...         'status': 'filled'
+    ...     }
+    ... ]
+    """
 
     def __init__(self, config, dbconnector: DBConnector):
         """Initialize strategy with config and database connector."""

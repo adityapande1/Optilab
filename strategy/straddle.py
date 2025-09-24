@@ -24,10 +24,22 @@ class Straddle(Strategy):
             self.strike = self.dbconnector.get_ATM_strike(timestamp)
             closest_expiry = self.dbconnector.get_closest_expiry(timestamp)
             atm_call_action = Action(
-                option_type='CE', strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type=self.config.call_order_type, stoploss=self.config.call_risk
+                option_type='CE',
+                strike=self.strike,
+                expiry=closest_expiry,
+                num_lots=1,
+                trade_type=self.config.long_or_short,
+                order_type=self.config.call_order_type,
+                stoploss=self.config.call_risk,
             )
             atm_put_action = Action(
-                option_type='PE', strike=self.strike, expiry=closest_expiry, num_lots=1, trade_type=self.config.long_or_short, order_type=self.config.put_order_type, stoploss=self.config.put_risk
+                option_type='PE',
+                strike=self.strike,
+                expiry=closest_expiry,
+                num_lots=1,
+                trade_type=self.config.long_or_short,
+                order_type=self.config.put_order_type,
+                stoploss=self.config.put_risk,
             )
             actions = [atm_call_action, atm_put_action]
 

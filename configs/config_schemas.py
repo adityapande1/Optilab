@@ -3,6 +3,7 @@ from pydantic import BaseModel, field_validator, model_validator
 from datetime import datetime, time, date
 import pickle
 import json
+from typing import Literal
 
 # ------------------------------
 # BaseConfig: common save/load
@@ -29,12 +30,6 @@ class BaseConfig(BaseModel):
         Returns a JSON string representation of the config.
         """
         return json.dumps(self.model_dump(), sort_keys=True, default=str)
-
-    def as_dict(self):
-        """
-        Returns a dictionary representation of the config.
-        """
-        return self.model_dump()
 
 
 #########################################################################################
@@ -106,8 +101,21 @@ class BaseBacktesterConfig(BaseConfig):
     start_date: date
     end_date: date
     per_lot_transaction_cost: float
-    results_dir: str
     lot_size: int
+    results_dir: str
+
+    @field_validator('start_date', 'end_date', mode='before')
+    def parse_dates(cls, v):
+        return pd.Timestamp(v).date()
+
+class PositionalBacktesterConfig(BaseConfig):
+    name: str
+    start_date: date
+    end_date: date
+    per_lot_transaction_cost: float
+    lot_size: int
+    results_dir: str
+    total_position_risk: float
 
     @field_validator('start_date', 'end_date', mode='before')
     def parse_dates(cls, v):
@@ -116,4 +124,5 @@ class BaseBacktesterConfig(BaseConfig):
 
 BACKTESTER_NAME_TO_BACKTESTER_CONFIG_MAP = {
     'base_backtester': BaseBacktesterConfig,
+    'positional_backtester': PositionalBacktesterConfig,
 }

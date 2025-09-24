@@ -1,0 +1,7 @@
+name: positional_backtester # Name of the backtester configuration
+start_date: 2024-01-01 # Backtest start date
+end_date: 2025-08-28 # Backtest end date
+per_lot_transaction_cost: 40.0 # Transaction cost per lot in rupees for one side (Open-Close Leg ---> 2X)
+results_dir: BT_RESULT # Directory to save backtest results
+lot_size: 75 # Lot size for trading
+total_position_risk: 5000.0 # Total risk in rupees for the entire position

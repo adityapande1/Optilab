@@ -7,18 +7,37 @@ from utils.data_utils import read_option_data, read_parquet_data
 
 
 class DBConnector:
-    def __init__(self, database_path: str = None, expiries_json_path: str = None, spot_parquet_path: str = None):
+    def __init__(
+        self,
+        database_path: str = None,
+        expiries_json_path: str = None,
+        spot_parquet_path: str = None,
+    ):
         self.database_path = database_path if database_path else GLOBAL_DB_FOLDERPATH
         self.expiries_json_path = expiries_json_path if expiries_json_path else NIFTY_EXPIRIES_JSON_PATH
         self.spot_parquet_path = spot_parquet_path if spot_parquet_path else NIFTY_PARQUET_PATH
         self.df_spot = read_parquet_data(self.spot_parquet_path)
 
-    def get_option_df(self, option_type, strike, expiry_date, ticker='NIFTY', drop_duplicate_indices=True) -> pd.DataFrame:
+    def get_option_df(
+        self,
+        option_type,
+        strike,
+        expiry_date,
+        ticker='NIFTY',
+        drop_duplicate_indices=True,
+    ) -> pd.DataFrame:
         """Method to read option dataframe from the database."""
         # Example :: self.get_option_df(option_type="CE", strike=22500, expiry_date="2025-05-08")
 
         assert option_type in ['CE', 'PE'], "Option type must be 'CE' or 'PE'"
-        df_option = read_option_data(option_type=option_type, strike=strike, expiry_date=expiry_date, db_folderpath=self.database_path, ticker=ticker, drop_duplicate_indices=drop_duplicate_indices)
+        df_option = read_option_data(
+            option_type=option_type,
+            strike=strike,
+            expiry_date=expiry_date,
+            db_folderpath=self.database_path,
+            ticker=ticker,
+            drop_duplicate_indices=drop_duplicate_indices,
+        )
         return df_option
 
     def get_ATM_strike(self, timestamp: pd.Timestamp = None, field: str = 'close') -> int:
@@ -32,11 +51,26 @@ class DBConnector:
 
         return int(closest_strike)
 
-    def get_option_price(self, strike, option_type, expiry_date, timestamp=None, field='close', ticker='NIFTY', drop_duplicate_indices=True) -> float:
+    def get_option_price(
+        self,
+        strike,
+        option_type,
+        expiry_date,
+        timestamp=None,
+        field='close',
+        ticker='NIFTY',
+        drop_duplicate_indices=True,
+    ) -> float:
         """This method should return the option price [field] at a specific timestamp"""
         # Example  ::  self.get_option_price(strike=22500, option_type="CE", expiry_date="2025-05-08", timestamp=pd.Timestamp("2025-05-08 9:15:00"))
 
-        df_option = self.get_option_df(option_type=option_type, strike=strike, expiry_date=expiry_date, ticker=ticker, drop_duplicate_indices=drop_duplicate_indices)
+        df_option = self.get_option_df(
+            option_type=option_type,
+            strike=strike,
+            expiry_date=expiry_date,
+            ticker=ticker,
+            drop_duplicate_indices=drop_duplicate_indices,
+        )
 
         timestamp = pd.Timestamp(f'{expiry_date} 9:15:00') if timestamp is None else timestamp
         price = float(df_option.loc[timestamp][field])
@@ -67,4 +101,9 @@ if __name__ == '__main__':
     # Example to use DBConnector
     db = DBConnector()
     df_option = db.get_option_df(option_type='CE', strike=22500, expiry_date='2025-05-08')
-    price = db.get_option_price(strike=22500, option_type='CE', expiry_date='2025-05-08', timestamp=pd.Timestamp('2025-05-08 9:25:00'))
+    price = db.get_option_price(
+        strike=22500,
+        option_type='CE',
+        expiry_date='2025-05-08',
+        timestamp=pd.Timestamp('2025-05-08 9:25:00'),
+    )

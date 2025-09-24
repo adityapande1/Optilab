@@ -13,7 +13,7 @@ from backtest.metrics import update_metric_pnl
 from connectors.dbconnector import DBConnector
 from constants import BACKTEST_RESULTS_FOLDERPATH
 from strategy import Action, Strategy
-from utils.data_utils import generate_positive_hash
+from utils.data_utils import generate_combined_ohlc_dataframe, generate_positive_hash
 
 
 @dataclass
@@ -42,7 +42,7 @@ class Order:
         self.status = new_status
 
 
-class BackTester:
+class PositionalBackTester:
     """
     BackTester is responsible to keep track of the metrics.
     """
@@ -241,10 +241,11 @@ class BackTester:
         return filled_orders
 
     def update_step_metrics(self, timestamp: pd.Timestamp, metadata, valid_timestamps: pd.Index):
+
         for hash, tally_dict in self.strategy.position_tally.items():
             if (tally_dict['closed'] is not None) and (hash not in self.orderhash_to_dfposition_map):  # meaning the open position has been closed and df_position can now be completely made
                 order_hash = tally_dict['closed']['action'].square_off_id
-                self.orderhash_to_dfposition_map[order_hash] = self.orderhash_to_dfstoploss_map[order_hash][['price']].copy()  # TODO : Check effect of copy()
+                self.orderhash_to_dfposition_map[order_hash] = self.orderhash_to_dfstoploss_map[order_hash][['price']].copy()  # TODO : Check effect of copy()/not copy()
 
     def update_final_metrics(self):
         for hash, df_position in tqdm(self.orderhash_to_dfposition_map.items(), desc='Updating Final Metrics'):
@@ -450,6 +451,49 @@ class BackTester:
 
         return df_stoploss
 
+    def initialize_stoploss_dataframes_older(self, filled_orders: list[dict]):
+        """
+        Initialize a stoploss DataFrame for each `stoploss` type order in `filled_orders`.
+            - NOTE: `filled_orders` is a list of dictionaries containing order statistics `dict` for `filled` orders only.
+            - Create a DataFrame `df_stoploss` for each order in `filled_orders` if order_type in ( "market_stoploss" or "market_stoploss_trail")
+            - Store the DataFrame as `self.orderhash_to_dfstoploss_map[order_hash] = df_stoploss`
+
+        Parameters
+        ----------
+        filled_orders : A list of dictionaries containing order statistics for `filled` orders.
+
+        Example `filled_orders` list
+        -------
+        >>> filled_orders=[
+        ...                {
+        ...                    'hash': 14708032500100578527,
+        ...                    'timestamp': Timestamp('2024-01-01 09:15:00'),
+        ...                    'action': Action(option_type='CE', strike=21700, trade_type='short', expiry='2024-01-04',
+        ...                                     order_type='market_stoploss_trail', num_lots=1, limit_price=None, lot_type='full',
+        ...                                     lot_idx=1, square_off_id=None, stoploss=3500.0, target=None),
+        ...                    'trade_type': 'short',
+        ...                    'price': 137.45,
+        ...                    'stoploss_price_level': 184.1166,
+        ...                    'stoploss_hit_timestamp': None,
+        ...                    'status': 'filled'
+        ...                },
+        ...                {...},
+        ...                {...}
+        ...            ]
+        """
+
+        for order_stats in filled_orders:
+            assert order_stats['status'] == 'filled', 'Only filled orders should be in metadata'
+            action, order_hash = order_stats['action'], order_stats['hash']
+
+            if (
+                (action.order_type in ('market_stoploss', 'market_stoploss_trail')) and (order_hash not in self.orderhash_to_dfstoploss_map) and (action.square_off_id is None)
+            ):  # Order of Stoploss type | Not already initialized | Opening order|
+                df_stoploss = self.create_df_stoploss(order_stats)
+                self.orderhash_to_dfstoploss_map[order_hash] = df_stoploss
+                if not df_stoploss.empty and df_stoploss.iloc[-1]['stoploss_hit']:  # If Last row's stoploss_hit is True then add order_hash to self.timestamp_to_squareoffids
+                    self.exit_timestamp_to_squareoffids_map[df_stoploss.index[-1]].add(order_hash)
+
     def initialize_stoploss_dataframes(self, filled_orders: list[dict]) -> set:
         """
         Initialize a stoploss DataFrame for each `stoploss` type order in `filled_orders`.
@@ -485,23 +529,18 @@ class BackTester:
         ...            ]
         """
 
+        stoploss_hit_order_hashes = set()
         for order_stats in filled_orders:
             assert order_stats['status'] == 'filled', 'Only filled orders should be in filled_orders list'
             action, order_hash = order_stats['action'], order_stats['hash']
             if (
-                (action.order_type in ('market_stoploss', 'market_stoploss_trail'))  # Order of Stoploss type
-                and (order_hash not in self.orderhash_to_dfstoploss_map)  # df_position not already initialized
-                and (action.square_off_id is None)  # Opening fresh order
-            ):
+                (action.order_type in ('market_stoploss', 'market_stoploss_trail')) and (order_hash not in self.orderhash_to_dfstoploss_map) and (action.square_off_id is None)
+            ):  # Order of Stoploss type | Not already initialized | Opening order|
                 df_stoploss = self.create_df_stoploss(order_stats)
                 self.orderhash_to_dfstoploss_map[order_hash] = df_stoploss
+                if not df_stoploss.empty and df_stoploss.iloc[-1]['stoploss_hit']:  # If Last row's stoploss_hit is True then add order_hash to self.timestamp_to_squareoffids
+                    stoploss_hit_order_hashes.add(order_hash)
 
-    def get_stoploss_hit_order_hashes(self, filled_orders) -> set:
-        stoploss_hit_order_hashes = set()
-        for order_stats in filled_orders:
-            df_stoploss = self.orderhash_to_dfstoploss_map.get(order_stats['hash'], pd.DataFrame())
-            if not df_stoploss.empty and df_stoploss.iloc[-1]['stoploss_hit']:  # If Last row's stoploss_hit is True then add order_hash to self.timestamp_to_squareoffids
-                stoploss_hit_order_hashes.add(order_stats['hash'])
         return stoploss_hit_order_hashes
 
     def register_future_stoploss_hits(self, stoploss_hit_order_hashes: set):
@@ -519,6 +558,43 @@ class BackTester:
         for order_hash in stoploss_hit_order_hashes:
             df_stoploss = self.orderhash_to_dfstoploss_map.get(order_hash)
             self.exit_timestamp_to_squareoffids_map[df_stoploss.index[-1]].add(order_hash)
+
+    def get_stoploss_dataframe_for_filled_orders(self, filled_orders) -> pd.DataFrame:
+
+        ohlc_dataframes, trade_types = [], []
+        fresh_orders = [order_stats for order_stats in filled_orders if order_stats['action'].square_off_id is None]
+
+        if fresh_orders:
+
+            # Assert all the order_stat['timestamp'] are same for fresh_orders
+            timestamps = {order_stats['timestamp'] for order_stats in fresh_orders}
+            assert len(timestamps) == 1, f'All timestamps in filled_orders must be same for fresh_orders. Found timestamps : {timestamps}'
+            common_filling_timestamp = timestamps.pop()
+
+            starting_deal_price = 0
+            for order_stats in fresh_orders:
+                action = order_stats['action']
+                starting_deal_price = starting_deal_price + order_stats['price'] if order_stats['trade_type'] == 'buy' else starting_deal_price - order_stats['price']
+                trade_types.append(order_stats['trade_type'])
+                df_option = self.dbconnector.get_option_df(
+                    option_type=action.option_type,
+                    strike=action.strike,
+                    expiry_date=action.expiry
+                    )
+                df_option = df_option[df_option.index >= common_filling_timestamp].copy()
+                ohlc_dataframes.append(df_option)
+
+            starting_stoploss_level = starting_deal_price - self.config.total_position_risk/self.config.lot_size
+            df_stoploss = generate_combined_ohlc_dataframe(ohlc_dataframes, trade_types)
+
+            df_stoploss = self.calculate_stoploss_levels(df=df_stoploss,
+                                                        starting_stoploss_level=starting_stoploss_level,
+                                                        position_type='long',
+                                                        trail_stoploss=False)
+        else:
+            df_stoploss = pd.DataFrame()
+
+        return df_stoploss
 
     def run(self) -> dict:
         self.valid_timestamps = self.dbconnector.df_spot.loc[self.config.start_date : self.config.end_date].index
@@ -545,11 +621,13 @@ class BackTester:
             # 3. Process the 'self.outstanding_orders' at the current timestamp to get filled orders
             filled_orders = self.process_outstanding_orders(current_timestamp)
 
+            print(f"Current TS :{current_timestamp}")
             # 3.1.1
-            self.initialize_stoploss_dataframes(filled_orders)
-            stoploss_hit_order_hashes = self.get_stoploss_hit_order_hashes(filled_orders)
-            if stoploss_hit_order_hashes:
-                self.register_future_stoploss_hits(stoploss_hit_order_hashes)
+            if filled_orders:
+                df_stoploss_filled_orders = self.get_stoploss_dataframe_for_filled_orders(filled_orders)
+                if not df_stoploss_filled_orders.empty and df_stoploss_filled_orders.iloc[-1]['stoploss_hit']:
+                    stoploss_hit_order_hashes = {order_stats['hash'] for order_stats in filled_orders if order_stats['action'].square_off_id is None}
+                    self.exit_timestamp_to_squareoffids_map[current_timestamp].update(stoploss_hit_order_hashes)
 
             # 4. Inform strategy about the trade by passing the metadata of the trade.
             self.strategy.on_trade_execution(filled_orders, self.outstanding_orders)
@@ -557,5 +635,8 @@ class BackTester:
             # 5. Update all the metrics for the time step by calling the update_metrics function.
             self.update_step_metrics(current_timestamp, filled_orders, self.valid_timestamps)
 
-        # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.
+            if current_timestamp == pd.Timestamp('2024-01-01 15:19:00'):
+                import ipdb; ipdb.set_trace()
+
+            aaa = 10        # 6. When all the timesteps are done, then compute one-time metrics such as Sharpe ratio, Expectancy and more.
         self.update_final_metrics()

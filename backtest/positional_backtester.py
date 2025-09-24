@@ -14,7 +14,7 @@ from connectors.dbconnector import DBConnector
 from constants import BACKTEST_RESULTS_FOLDERPATH
 from strategy import Action, Strategy
 from utils.data_utils import generate_positive_hash
-
+from utils.data_utils import generate_combined_ohlc_dataframe
 
 @dataclass
 class Order:
@@ -42,7 +42,7 @@ class Order:
         self.status = new_status
 
 
-class BackTester:
+class PositionalBackTester:
     """
     BackTester is responsible to keep track of the metrics.
     """
@@ -411,7 +411,7 @@ class BackTester:
 
         return df
 
-    def create_df_stoploss(self, order_stats: dict) -> pd.DataFrame:
+    def create_df_stoploss(self, order_stats: dict, df_stoploss_combined: pd.DataFrame) -> pd.DataFrame:
         """
         Create a DataFrame `df_stoploss` to track stoploss levels over time for given order_stats.
             - The DataFrame's index is a datetime index ranging from the order's filled timestamp to the strategy's exit timestamp on the same day.
@@ -426,7 +426,7 @@ class BackTester:
         pd.DataFrame : A DataFrame containing OHLC prices and calculated stoploss levels over time.
         """
 
-        df_stoploss = self.dbconnector.get_option_df(
+        df_stoploss_option = self.dbconnector.get_option_df(
             option_type=order_stats['action'].option_type,
             strike=order_stats['action'].strike,
             expiry_date=order_stats['action'].expiry,
@@ -436,21 +436,24 @@ class BackTester:
         if self.strategy.name == 'Straddle':
             end_timestamp = pd.Timestamp.combine(start_timestamp.date(), self.strategy.config.exit_time)  # end_timestamp is the exit time on the same day as order_stats['timestamp']
         elif self.strategy.name == 'WeeklyStraddle':
-            end_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp, None)  # end_timestamp is the exit time on the same day as order_stats['timestamp']
+            end_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp, None)
 
-        df_stoploss = df_stoploss.loc[(df_stoploss.index >= start_timestamp) & (df_stoploss.index <= end_timestamp)].copy()
+        if not df_stoploss_combined.empty and df_stoploss_combined.iloc[-1]['stoploss_hit']:
+            end_timestamp = min(end_timestamp, df_stoploss_combined.index[-1])
 
-        assert not df_stoploss.empty, f'df_stoploss is empty for order_stats : {order_stats}'
-        df_stoploss = self.calculate_stoploss_levels(
-            df=df_stoploss,
+        df_stoploss_option = df_stoploss_option.loc[(df_stoploss_option.index >= start_timestamp) & (df_stoploss_option.index <= end_timestamp)].copy()
+
+        assert not df_stoploss_option.empty, f'df_stoploss is empty for order_stats : {order_stats}'
+        df_stoploss_option = self.calculate_stoploss_levels(
+            df=df_stoploss_option,
             starting_stoploss_level=order_stats['stoploss_price_level'],
             position_type=order_stats['trade_type'],
             trail_stoploss=(order_stats['action'].order_type == 'market_stoploss_trail'),
         )
 
-        return df_stoploss
+        return df_stoploss_option
 
-    def initialize_stoploss_dataframes(self, filled_orders: list[dict]) -> set:
+    def initialize_stoploss_dataframes(self, filled_orders: list[dict], df_stoploss_combined: pd.DataFrame) -> set:
         """
         Initialize a stoploss DataFrame for each `stoploss` type order in `filled_orders`.
             - NOTE: `filled_orders` is a list of dictionaries containing order statistics `dict` for `filled` orders only.
@@ -493,7 +496,7 @@ class BackTester:
                 and (order_hash not in self.orderhash_to_dfstoploss_map)  # df_position not already initialized
                 and (action.square_off_id is None)  # Opening fresh order
             ):
-                df_stoploss = self.create_df_stoploss(order_stats)
+                df_stoploss = self.create_df_stoploss(order_stats, df_stoploss_combined)
                 self.orderhash_to_dfstoploss_map[order_hash] = df_stoploss
 
     def get_stoploss_hit_order_hashes(self, filled_orders) -> set:
@@ -519,6 +522,44 @@ class BackTester:
         for order_hash in stoploss_hit_order_hashes:
             df_stoploss = self.orderhash_to_dfstoploss_map.get(order_hash)
             self.exit_timestamp_to_squareoffids_map[df_stoploss.index[-1]].add(order_hash)
+
+    def get_combined_stoploss_dataframe(self, filled_orders: list[dict]) -> pd.DataFrame:
+
+        ohlc_dataframes, trade_types = [], []
+        fresh_orders = [order_stats for order_stats in filled_orders if order_stats['action'].square_off_id is None]
+
+        if fresh_orders:
+
+            # Assert all the order_stat['timestamp'] are same for fresh_orders
+            timestamps = {order_stats['timestamp'] for order_stats in fresh_orders}
+            assert len(timestamps) == 1, f'All timestamps in filled_orders must be same for fresh_orders. Found timestamps : {timestamps}'
+            common_order_filling_timestamp = timestamps.pop()
+
+            starting_deal_price = 0
+            for order_stats in fresh_orders:
+                action = order_stats['action']
+                starting_deal_price = starting_deal_price + order_stats['price'] if order_stats['trade_type'] == 'buy' else starting_deal_price - order_stats['price']
+                trade_types.append(order_stats['trade_type'])
+                df_option = self.dbconnector.get_option_df(
+                    option_type=action.option_type,
+                    strike=action.strike,
+                    expiry_date=action.expiry
+                    )
+                df_option = df_option[df_option.index >= common_order_filling_timestamp].copy()
+                ohlc_dataframes.append(df_option)
+
+            starting_stoploss_level = starting_deal_price - self.config.total_position_risk/self.config.lot_size
+            df_stoploss = generate_combined_ohlc_dataframe(ohlc_dataframes, trade_types)
+
+            df_stoploss = self.calculate_stoploss_levels(df=df_stoploss,
+                                                        starting_stoploss_level=starting_stoploss_level,
+                                                        position_type='long',
+                                                        trail_stoploss=False)
+        else:
+            df_stoploss = pd.DataFrame()
+
+        return df_stoploss
+
 
     def run(self) -> dict:
         self.valid_timestamps = self.dbconnector.df_spot.loc[self.config.start_date : self.config.end_date].index
@@ -546,7 +587,8 @@ class BackTester:
             filled_orders = self.process_outstanding_orders(current_timestamp)
 
             # 3.1.1
-            self.initialize_stoploss_dataframes(filled_orders)
+            df_stoploss_combined = self.get_combined_stoploss_dataframe(filled_orders)
+            self.initialize_stoploss_dataframes(filled_orders, df_stoploss_combined)
             stoploss_hit_order_hashes = self.get_stoploss_hit_order_hashes(filled_orders)
             if stoploss_hit_order_hashes:
                 self.register_future_stoploss_hits(stoploss_hit_order_hashes)

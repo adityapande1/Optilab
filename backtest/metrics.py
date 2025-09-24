@@ -7,7 +7,13 @@ from backtest.backtest_analyzer import BacktestAnalyzer
 import quantstats as qs
 
 
-def update_metric_pnl(df: pd.DataFrame, trade_type: str, lot_size: int, per_lot_transaction_cost: float = 0, num_lots: int = 1) -> None:
+def update_metric_pnl(
+    df: pd.DataFrame,
+    trade_type: str,
+    lot_size: int,
+    per_lot_transaction_cost: float = 0,
+    num_lots: int = 1,
+) -> None:
     assert trade_type in ('long', 'short'), "trade_type must be 'long' or 'short'"
     assert lot_size > 0, 'lot_size must be positive'
     assert 'price' in df.columns, "DataFrame must contain 'price' column"
@@ -58,9 +64,18 @@ class MetricEngine:
 
     def _update_all_metrics(self):
         # Day Count & Trade Count Metrics
-        self.metrics['total_days'] = {'help': 'Total number of trading days', 'value': len(self.df_portfolio_metrics_daily.index.normalize().unique())}
-        self.metrics['positive_days'] = {'help': 'Number of days with positive returns', 'value': (self.df_portfolio_metrics_daily['daily_return'] > 0).sum()}
-        self.metrics['negative_days'] = {'help': 'Number of days with negative returns (including zero return days)', 'value': (self.df_portfolio_metrics_daily['daily_return'] <= 0).sum()}
+        self.metrics['total_days'] = {
+            'help': 'Total number of trading days',
+            'value': len(self.df_portfolio_metrics_daily.index.normalize().unique()),
+        }
+        self.metrics['positive_days'] = {
+            'help': 'Number of days with positive returns',
+            'value': (self.df_portfolio_metrics_daily['daily_return'] > 0).sum(),
+        }
+        self.metrics['negative_days'] = {
+            'help': 'Number of days with negative returns (including zero return days)',
+            'value': (self.df_portfolio_metrics_daily['daily_return'] <= 0).sum(),
+        }
         self.metrics['win_rate'] = {
             'help': 'The ratio of positive returns to total non-zero returns, providing a measure of how often the strategy generates profits.',
             'value': qs.stats.win_rate(returns=self.df_portfolio_metrics_daily['daily_return']),
@@ -77,15 +92,24 @@ class MetricEngine:
             'help': 'Maximum number of consecutive losing periods. The longest streak of negative returns, which helps assess the risk of prolonged drawdowns.',
             'value': qs.stats.consecutive_losses(returns=self.df_portfolio_metrics_daily['daily_return']),
         }
-        self.metrics['highest_return'] = {'help': 'Best (highest) daily return', 'value': qs.stats.best(returns=self.df_portfolio_metrics_daily['daily_return'])}
-        self.metrics['lowest_return'] = {'help': 'Worst (lowest) daily return', 'value': qs.stats.worst(returns=self.df_portfolio_metrics_daily['daily_return'])}
+        self.metrics['highest_return'] = {
+            'help': 'Best (highest) daily return',
+            'value': qs.stats.best(returns=self.df_portfolio_metrics_daily['daily_return']),
+        }
+        self.metrics['lowest_return'] = {
+            'help': 'Worst (lowest) daily return',
+            'value': qs.stats.worst(returns=self.df_portfolio_metrics_daily['daily_return']),
+        }
 
         # Drawdown details
         dd_series = qs.stats.to_drawdown_series(self.df_portfolio_metrics_daily['daily_return'])
         dd_details = qs.stats.drawdown_details(dd_series).sort_values(by='max drawdown', ascending=True)
         # Reindex from 0 -->
         dd_details.index = range(len(dd_details))
-        self.metrics['df_drawdown'] = {'help': 'Detailed statistics about drawdowns, including duration and recovery time.', 'value': dd_details}
+        self.metrics['df_drawdown'] = {
+            'help': 'Detailed statistics about drawdowns, including duration and recovery time.',
+            'value': dd_details,
+        }
 
         # Ratios
         self.metrics['sharpe_ratio'] = {
