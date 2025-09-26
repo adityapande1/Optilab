@@ -3,11 +3,6 @@ from pydantic import BaseModel, field_validator, model_validator
 from datetime import datetime, time, date
 import pickle
 import json
-from typing import Literal
-
-# ------------------------------
-# BaseConfig: common save/load
-# ------------------------------
 
 
 class BaseConfig(BaseModel):
@@ -39,9 +34,7 @@ class BaseConfig(BaseModel):
 
 
 #########################################################################################
-# ------------------------------
 # STRATEGY Configs
-# ------------------------------
 #########################################################################################
 
 
@@ -50,7 +43,7 @@ class StraddleConfig(BaseConfig):
     call_risk: float
     trail_call_risk: bool
     put_risk: float
-    trail_put_risk: int
+    trail_put_risk: bool
     long_or_short: str
     entry_time: time
     exit_time: time
@@ -67,6 +60,20 @@ class StraddleConfig(BaseConfig):
         self.call_order_type = 'market_stoploss_trail' if self.trail_call_risk else 'market_stoploss'
         self.put_order_type = 'market_stoploss_trail' if self.trail_put_risk else 'market_stoploss'
         return self
+
+    @classmethod
+    def get_standard_field_choices(self):
+        return {
+            'call_risk': list(range(1000, 8001, 500)),
+            'put_risk': list(range(1000, 8001, 500)),
+            'trail_call_risk': [True, False],
+            'trail_put_risk': [True, False],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'straddle'
 
 
 class WeeklyStraddleConfig(BaseConfig):
@@ -92,13 +99,25 @@ class WeeklyStraddleConfig(BaseConfig):
         self.put_order_type = 'market_stoploss_trail' if self.trail_put_risk else 'market_stoploss'
         return self
 
+    @classmethod
+    def get_standard_field_choices(self):
+        return {
+            'call_risk': list(range(1000, 8001, 500)),
+            'put_risk': list(range(1000, 8001, 500)),
+            'trail_call_risk': [True, False],
+            'trail_put_risk': [True, False],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'weekly_straddle'
+
 
 STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {'straddle': StraddleConfig, 'weekly_straddle': WeeklyStraddleConfig}
 
 ###############################################################
-# ------------------------------
 # Backtester Configs
-# ------------------------------
 ###############################################################
 
 
@@ -114,6 +133,15 @@ class BaseBacktesterConfig(BaseConfig):
     def parse_dates(cls, v):
         return pd.Timestamp(v).date()
 
+    @classmethod
+    def get_standard_field_choices(self):
+        return {}
+
+    @classmethod
+    def get_name(cls):
+        return 'base_backtester'
+
+
 class PositionalBacktesterConfig(BaseConfig):
     name: str
     start_date: date
@@ -126,6 +154,14 @@ class PositionalBacktesterConfig(BaseConfig):
     @field_validator('start_date', 'end_date', mode='before')
     def parse_dates(cls, v):
         return pd.Timestamp(v).date()
+
+    @classmethod
+    def get_standard_field_choices(self):
+        return {'total_position_risk': list(range(1000, 20001, 1000))}
+
+    @classmethod
+    def get_name(cls):
+        return 'positional_backtester'
 
 
 BACKTESTER_NAME_TO_BACKTESTER_CONFIG_MAP = {
