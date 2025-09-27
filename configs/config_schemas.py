@@ -1,5 +1,5 @@
 import pandas as pd
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator, model_validator, ConfigDict
 from datetime import datetime, time, date
 import pickle
 import json

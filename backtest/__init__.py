@@ -46,6 +46,10 @@ class Backtester(ABC):
         self.dbconnector = dbconnector
 
     @abstractmethod
+    def run(self):
+        """Backtests the run loop."""
+        raise NotImplementedError('Subclasses must implement run()')
+
     def is_square_off_id_valid(self, square_off_id: int) -> bool:
         """
         Validate if the given `square_off_id` corresponds to an existing (still open and filled) position in `self.strategy.position`.
@@ -67,7 +71,6 @@ class Backtester(ABC):
                 return True
         raise ValueError(f'{square_off_id} is an invalid hash for a square-off action.')
 
-    @abstractmethod
     def validate_actions(self, actions: list[Action]) -> list[Action]:
         """
         Validate a list of actions. Check square_off_id validity if it is a square_off action.
@@ -92,7 +95,6 @@ class Backtester(ABC):
                 validated_actions.append(action)
         return validated_actions
 
-    @abstractmethod
     def get_orders_from_actions(self, actions: list[Action], timestamp: pd.Timestamp) -> list[Order]:
         """
         Converts a list of actions into a list of orders and returns them.
@@ -120,7 +122,6 @@ class Backtester(ABC):
                 collected_orders.append(order)
         return collected_orders
 
-    @abstractmethod
     def initialize_portfolio_metrics_dataframe(self, timestamps: pd.DatetimeIndex) -> None:
         """
         Initializes `self.df_portfolio_metrics` with a pandas datetime index of given `timestamps`.
@@ -148,7 +149,6 @@ class Backtester(ABC):
             self.df_portfolio_metrics[metric_name] = metric_default_val
             self.df_portfolio_metrics[metric_name] = self.df_portfolio_metrics[metric_name].astype(metric_variable_type)
 
-    @abstractmethod
     def save_results(self, foldername: str = None):
         """Saves the backtest results to the specified directory"""
 
@@ -191,8 +191,3 @@ class Backtester(ABC):
             f.write(str(folder_hash))
 
         print(f'Backtest results saved to {folder_path}\n')
-
-    @abstractmethod
-    def run(self):
-        """Backtests the run loop."""
-        raise NotImplementedError('Subclasses must implement run()')
