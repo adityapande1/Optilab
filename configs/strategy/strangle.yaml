@@ -1,0 +1,11 @@
+name: strangle # Name of the strategy configuration
+long_or_short: short # Direction of the straddle position
+otm_call_risk: inf # Risk for the call leg in a straddle (₹). The leg gets cut if this risk is breached.
+trail_call_risk: false # Whether to trail the stoploss risk for the call leg.
+otm_put_risk: inf # Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.
+trail_put_risk: false # Whether to trail the stoploss risk for the put leg.
+entry_time: "09:15:00" # Time to enter the straddle position
+exit_time: "15:20:00" # Time to exit the straddle position
+lot_size: 75 # The lot size for the single position
+strike_interval: 50 # The minimum interval between strikes of the option chain [Eg 50 for NIFTY]
+spread_width: 100 # The width of the strangle spread in points i.e, [ otm_call_strike - otm_put_strike ]

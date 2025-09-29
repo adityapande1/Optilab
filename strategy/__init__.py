@@ -175,7 +175,6 @@ class Strategy(ABC):
 
         # Params common to all strategies
         self.position = []  # will contain orders that are 'filled'
-        self.outstanding_orders = None  # will change later according to orders other than filled
         self.position_tally = {}  # Will contain the tally of each filled --> squared of position
 
     # Abstract methods to be implemented by subclasses
@@ -208,28 +207,26 @@ class Strategy(ABC):
 
         return actions
 
-    def on_trade_execution(self, metadata: list[dict], outstanding_orders: list):
+    def on_trade_execution(self, filled_orders: list[dict]) -> None:
         """
         metadata: List of `filled` orders.
-        outstanding_orders: `unfulfilled` orders
         """
-        self.outstanding_orders = copy.deepcopy(outstanding_orders)
 
-        for filled_position in metadata:
+        for order_stats in filled_orders:
             # 1. If this is a square_off order, clear from self.position
-            if filled_position['action'].square_off_id:
+            if order_stats['action'].square_off_id:
                 position_to_remove = None
                 for our_position in self.position:
-                    if our_position['hash'] == filled_position['action'].square_off_id:
+                    if our_position['hash'] == order_stats['action'].square_off_id:
                         position_to_remove = our_position
                         break
 
                 assert position_to_remove, f'INVALID SQUARE-OFF. A filled position does not exist in {self.position}.'
-                self.position_tally[filled_position['action'].square_off_id]['closed'] = filled_position
+                self.position_tally[order_stats['action'].square_off_id]['closed'] = order_stats
                 self.position.remove(position_to_remove)
             # 2. Else, simply add to self.position
             else:
-                self.position.append(filled_position)
-                self.position_tally[filled_position['hash']] = {}
-                self.position_tally[filled_position['hash']]['opened'] = filled_position
-                self.position_tally[filled_position['hash']]['closed'] = None
+                self.position.append(order_stats)
+                self.position_tally[order_stats['hash']] = {}
+                self.position_tally[order_stats['hash']]['opened'] = order_stats
+                self.position_tally[order_stats['hash']]['closed'] = None

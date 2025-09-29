@@ -1,9 +1,6 @@
-from typing import Union
 from strategy import Strategy, Action
 from connectors.dbconnector import DBConnector
 import pandas as pd
-import copy
-from rich import print
 
 
 class Straddle(Strategy):

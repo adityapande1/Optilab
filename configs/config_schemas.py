@@ -114,7 +114,49 @@ class WeeklyStraddleConfig(BaseConfig):
         return 'weekly_straddle'
 
 
-STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {'straddle': StraddleConfig, 'weekly_straddle': WeeklyStraddleConfig}
+class StrangleConfig(BaseConfig):
+    name: str
+    long_or_short: str
+    otm_call_risk: float
+    trail_call_risk: bool
+    otm_put_risk: float
+    trail_put_risk: bool
+    entry_time: time
+    exit_time: time
+    lot_size: int
+    strike_interval: int
+    spread_width: int
+    otm_call_order_type: str = None
+    otm_put_order_type: str = None
+
+    @field_validator('entry_time', 'exit_time', mode='before')
+    def parse_time(cls, v):
+        return datetime.strptime(v, '%H:%M:%S').time()
+
+    @model_validator(mode='after')
+    def make_order_types(self):
+        self.otm_call_order_type = 'market_stoploss_trail' if self.trail_call_risk else 'market_stoploss'
+        self.otm_put_order_type = 'market_stoploss_trail' if self.trail_put_risk else 'market_stoploss'
+        return self
+
+    @classmethod
+    def get_standard_field_choices(self):
+        return {
+            'otm_call_risk': list(range(1000, 8001, 500)),
+            'otm_put_risk': list(range(1000, 8001, 500)),
+            'trail_call_risk': [True, False],
+            'trail_put_risk': [True, False],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'spread_width': [50, 100, 150, 200],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'strangle'
+
+
+
+STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {'straddle': StraddleConfig, 'weekly_straddle': WeeklyStraddleConfig, 'strangle': StrangleConfig}
 
 ###############################################################
 # Backtester Configs
