@@ -65,10 +65,7 @@ class Straddle(Strategy):
 
         about_str += f'For each day, If market is open\n'
         about_str += f'     Enter an Straddle of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying\n'
-        if self.config.long_or_short == 'short':
-            opposite_pos = 'LONG'
-        elif self.config.long_or_short == 'long':
-            opposite_pos = 'SHORT'
+ 
         about_str += f'     Net position: \n'
         about_str += f'        {self.config.long_or_short.upper()} : [ATM Call and ATM Put] of strike according to close at {self.config.entry_time.strftime("%H:%M:%S")} (X2)\n'
         about_str += f'     1. EXIT : If time is {self.config.exit_time.strftime("%H:%M:%S")} is reached\n'

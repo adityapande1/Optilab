@@ -62,7 +62,7 @@ class StraddleConfig(BaseConfig):
         return self
 
     @classmethod
-    def get_standard_field_choices(self):
+    def get_field_choices_for_simulation(self):
         return {
             'call_risk': list(range(1000, 8001, 500)),
             'put_risk': list(range(1000, 8001, 500)),
@@ -100,7 +100,7 @@ class WeeklyStraddleConfig(BaseConfig):
         return self
 
     @classmethod
-    def get_standard_field_choices(self):
+    def get_field_choices_for_simulation(self):
         return {
             'call_risk': list(range(1000, 8001, 500)),
             'put_risk': list(range(1000, 8001, 500)),
@@ -140,7 +140,7 @@ class StrangleConfig(BaseConfig):
         return self
 
     @classmethod
-    def get_standard_field_choices(self):
+    def get_field_choices_for_simulation(self):
         return {
             'otm_call_risk': list(range(1000, 8001, 500)),
             'otm_put_risk': list(range(1000, 8001, 500)),
@@ -155,8 +155,69 @@ class StrangleConfig(BaseConfig):
         return 'strangle'
 
 
+class IronButterflyConfig(BaseConfig):
+    # Overall strategy configs
+    name: str
+    long_or_short: str
+    entry_time: time
+    exit_time: time
+    lot_size: int
+    wing_width: int
 
-STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {'straddle': StraddleConfig, 'weekly_straddle': WeeklyStraddleConfig, 'strangle': StrangleConfig}
+    # Leg configs
+    otm_put_risk: float
+    trail_otm_put_risk: bool
+    atm_put_risk: float
+    trail_atm_put_risk: bool
+    atm_call_risk: float
+    trail_atm_call_risk: bool
+    otm_call_risk: float
+    trail_otm_call_risk: bool
+
+    # These will be set in model_validator
+    otm_put_order_type: str = None
+    atm_call_order_type: str = None
+    atm_put_order_type: str = None
+    otm_call_order_type: str = None
+
+    @field_validator('entry_time', 'exit_time', mode='before')
+    def parse_time(cls, v):
+        return datetime.strptime(v, '%H:%M:%S').time()
+
+    @model_validator(mode='after')
+    def make_order_types(self):
+        self.otm_put_order_type = 'market_stoploss_trail' if self.trail_otm_put_risk else 'market_stoploss'
+        self.atm_put_order_type = 'market_stoploss_trail' if self.trail_atm_put_risk else 'market_stoploss'
+        self.atm_call_order_type = 'market_stoploss_trail' if self.trail_atm_call_risk else 'market_stoploss'
+        self.otm_call_order_type = 'market_stoploss_trail' if self.trail_otm_call_risk else 'market_stoploss'
+        return self
+
+    @classmethod
+    def get_field_choices_for_simulation(self):
+        return {
+            'otm_put_risk': list(range(1000, 5001, 500)),
+            'trail_otm_put_risk': [True, False],
+            'atm_put_risk': list(range(1000, 5001, 500)),
+            'trail_atm_put_risk': [True, False],
+            'atm_call_risk': list(range(1000, 5001, 500)),
+            'trail_atm_call_risk': [True, False],
+            'otm_call_risk': list(range(1000, 5001, 500)),
+            'trail_otm_call_risk': [True, False],
+            'wing_width': [50, 100, 150],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'ironbutterfly'
+
+
+STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {
+    'straddle': StraddleConfig,
+    'weekly_straddle': WeeklyStraddleConfig,
+    'strangle': StrangleConfig,
+    'ironbutterfly': IronButterflyConfig,
+}
 
 ###############################################################
 # Backtester Configs
@@ -176,7 +237,7 @@ class BaseBacktesterConfig(BaseConfig):
         return pd.Timestamp(v).date()
 
     @classmethod
-    def get_standard_field_choices(self):
+    def get_field_choices_for_simulation(self):
         return {}
 
     @classmethod
@@ -198,7 +259,7 @@ class PositionalBacktesterConfig(BaseConfig):
         return pd.Timestamp(v).date()
 
     @classmethod
-    def get_standard_field_choices(self):
+    def get_field_choices_for_simulation(self):
         return {'total_position_risk': list(range(1000, 20001, 1000))}
 
     @classmethod

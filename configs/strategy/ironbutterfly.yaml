@@ -1,0 +1,14 @@
+name: ironbutterfly # Name of the strategy configuration
+long_or_short: short # Direction of the iron butterfly position
+entry_time: "09:15:00" # Time to enter the iron butterfly position
+exit_time: "15:20:00" # Time to exit the iron butterfly position
+lot_size: 75 # The lot size for the single position
+wing_width: 100 # The width of the wings in the iron butterfly [ATM STRIKE - OTM PUT STRIKE] = [OTM CALL STRIKE - ATM STRIKE]. Must be a positive multiple of strike_interval (50).
+otm_put_risk: inf # Risk for the OTM put leg in an iron butterfly (₹). The leg gets cut if this risk is breached.
+trail_otm_put_risk: false # Whether to trail the stoploss risk for the OTM put leg.
+atm_put_risk: inf # Risk for the ATM put leg in an iron butterfly (₹). The leg gets cut if this risk is breached.
+trail_atm_put_risk: false # Whether to trail the stoploss risk for the ATM put leg.
+atm_call_risk: inf # Risk for the ATM call leg in an iron butterfly (₹). The leg gets cut if this risk is breached.
+trail_atm_call_risk: false # Whether to trail the stoploss risk for the ATM call leg.
+otm_call_risk: inf # Risk for the OTM call leg in an iron butterfly (₹). The leg gets cut if this risk is breached.
+trail_otm_call_risk: false # Whether to trail the stoploss risk for the OTM call leg.
