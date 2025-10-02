@@ -2,7 +2,6 @@ from strategy import Strategy, Action
 from connectors.dbconnector import DBConnector
 import pandas as pd
 
-
 class Strangle(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)

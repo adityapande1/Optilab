@@ -1,8 +1,9 @@
-import pandas as pd
-from pydantic import BaseModel, field_validator, model_validator, ConfigDict
 from datetime import datetime, time, date
+from typing import Literal
+import pandas as pd
 import pickle
 import json
+from pydantic import BaseModel, conint, confloat, field_validator, model_validator
 
 
 class BaseConfig(BaseModel):
@@ -212,11 +213,75 @@ class IronButterflyConfig(BaseConfig):
         return 'ironbutterfly'
 
 
+class IronCondorConfig(BaseConfig):
+    # Overall strategy configs
+    name: str
+    long_or_short: Literal['long', 'short']  # Either 'long' or 'short'
+    entry_time: time
+    exit_time: time
+    lot_size: conint(gt=0)  # Integer >0
+    body_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
+    wing_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
+
+    # Leg configs
+    outer_otm_put_risk: confloat(ge=0) # Float >=0
+    trail_outer_otm_put_risk: bool
+    inner_otm_put_risk: confloat(ge=0) # Float >=0
+    trail_inner_otm_put_risk: bool
+    inner_otm_call_risk: confloat(ge=0) # Float >=0
+    trail_inner_otm_call_risk: bool
+    outer_otm_call_risk: confloat(ge=0) # Float >=0
+    trail_outer_otm_call_risk: bool
+
+    # These will be set in model_validator
+    outer_otm_put_order_type: str = None
+    inner_otm_put_order_type: str = None
+    inner_otm_call_order_type: str = None
+    outer_otm_call_order_type: str = None
+
+    # --- Field Validators ---
+    @field_validator('entry_time', 'exit_time', mode='before')
+    def parse_time(cls, v):
+        if isinstance(v, str):
+            return datetime.strptime(v, '%H:%M:%S').time()
+        return v
+
+    # --- Model Validator ---
+    @model_validator(mode='after')
+    def make_order_types(self):
+        self.outer_otm_put_order_type = 'market_stoploss_trail' if self.trail_outer_otm_put_risk else 'market_stoploss'
+        self.inner_otm_put_order_type = 'market_stoploss_trail' if self.trail_inner_otm_put_risk else 'market_stoploss'
+        self.inner_otm_call_order_type = 'market_stoploss_trail' if self.trail_inner_otm_call_risk else 'market_stoploss'
+        self.outer_otm_call_order_type = 'market_stoploss_trail' if self.trail_outer_otm_call_risk else 'market_stoploss'
+        return self
+
+    @classmethod
+    def get_field_choices_for_simulation(self):
+        return {
+            'outer_otm_put_risk': list(range(1000, 5001, 500)),
+            'trail_outer_otm_put_risk': [True, False],
+            'inner_otm_put_risk': list(range(1000, 5001, 500)),
+            'trail_inner_otm_put_risk': [True, False],
+            'inner_otm_call_risk': list(range(1000, 5001, 500)),
+            'trail_inner_otm_call_risk': [True, False],
+            'outer_otm_call_risk': list(range(1000, 5001, 500)),
+            'trail_outer_otm_call_risk': [True, False],
+            'body_width': [50, 100, 150],
+            'wing_width': [50, 100, 150],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'ironcondor'
+
+
 STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {
     'straddle': StraddleConfig,
     'weekly_straddle': WeeklyStraddleConfig,
     'strangle': StrangleConfig,
     'ironbutterfly': IronButterflyConfig,
+    'ironcondor': IronCondorConfig,
 }
 
 ###############################################################

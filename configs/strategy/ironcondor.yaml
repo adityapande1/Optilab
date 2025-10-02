@@ -1,0 +1,15 @@
+name: ironcondor # Name of the strategy configuration
+long_or_short: short # Direction of the iron condor position
+entry_time: "09:15:00" # Time to enter the iron condor position
+exit_time: "15:20:00" # Time to exit the iron condor position
+lot_size: 75 # The lot size for the single position
+body_width: 100 # [INNER OTM CALL STRIKE - INNER OTM PUT STRIKE]. Must be a positive multiple of strike_interval (50).
+wing_width: 100 # [INNER OTM PUT STRIKE - OUTER OTM PUT STRIKE] = [OUTER OTM CALL STRIKE - INNER OTM CALL STRIKE]. Must be a positive multiple of strike_interval (50).
+outer_otm_put_risk: inf # Risk for the outer OTM put leg in an iron condor (₹). The leg gets cut if this risk is breached.
+trail_outer_otm_put_risk: false # Whether to trail the stoploss risk for the outer OTM put leg.
+inner_otm_put_risk: inf # Risk for the inner OTM put leg in an iron condor (₹). The leg gets cut if this risk is breached.
+trail_inner_otm_put_risk: false # Whether to trail the stoploss risk for the inner OTM put leg.
+inner_otm_call_risk: inf # Risk for the inner OTM call leg in an iron condor (₹). The leg gets cut if this risk is breached.
+trail_inner_otm_call_risk: false # Whether to trail the stoploss risk for the inner OTM call leg.
+outer_otm_call_risk: inf # Risk for the outer OTM call leg in an iron condor (₹). The leg gets cut if this risk is breached.
+trail_outer_otm_call_risk: false # Whether to trail the stoploss risk for the outer OTM call leg.
