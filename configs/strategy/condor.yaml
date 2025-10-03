@@ -1,0 +1,16 @@
+name: condor # Name of the strategy configuration
+long_or_short: long # Direction of the condor position
+entry_time: "09:15:00" # Time to enter the condor position
+exit_time: "15:20:00" # Time to exit the condor position
+lot_size: 75 # The lot size for the single position
+body_width: 100 # [RIGHT LEG STRIKE - LEFT LEG STRIKE]. Must be a positive multiple of strike_interval (50).
+wing_width: 100 # [LEFT LEG STRIKE - LEFTMOST LEG STRIKE] = [RIGHTMOST LEG STRIKE - RIGHT LEG STRIKE]. Must be a positive multiple of strike_interval (50).
+condor_option_type: CE # The option making up for the butterfly strategy. Can be 'CE' or 'PE'.
+leftmost_leg_risk: inf # Risk for the leftmost leg in a condor (₹). The leg gets cut if this risk is breached.
+trail_leftmost_leg_risk: false # Whether to trail the stoploss for the leftmost leg.
+left_leg_risk: inf # Risk for the left leg in a condor (₹). The leg gets cut if this risk is breached.
+trail_left_leg_risk: false # Whether to trail the stoploss for the left leg.
+right_leg_risk: inf # Risk for the right leg in a condor (₹). The leg gets cut if this risk is breached.
+trail_right_leg_risk: false # Whether to trail the stoploss for the right leg.
+rightmost_leg_risk: inf # Risk for the rightmost leg in a condor (₹). The leg gets cut if this risk is breached.
+trail_rightmost_leg_risk: false # Whether to trail the stoploss for the rightmost leg.

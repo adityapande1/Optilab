@@ -324,6 +324,7 @@ class ButterflyConfig(BaseConfig):
             'itm_risk': list(range(1000, 5001, 500)),
             'trail_itm_risk': [True, False],
             'wing_width': [50, 100, 150],
+            'butterfly_option_type': ['CE', 'PE'],
             'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
         }
 
@@ -332,12 +333,78 @@ class ButterflyConfig(BaseConfig):
         return 'butterfly'
 
 
+class CondorConfig(BaseConfig):
+    # Overall strategy configs
+    name: str
+    long_or_short: Literal['long', 'short']  # Either 'long' or 'short'
+    entry_time: time
+    exit_time: time
+    lot_size: conint(gt=0)  # Integer >0
+    body_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
+    wing_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
+    condor_option_type: Literal['CE', 'PE']  # Either 'CE' or 'PE'
+
+    # Leg configs
+    leftmost_leg_risk: confloat(ge=0)  # Float >=0
+    trail_leftmost_leg_risk: bool
+    left_leg_risk: confloat(ge=0)  # Float >=0
+    trail_left_leg_risk: bool
+    right_leg_risk: confloat(ge=0)  # Float >=0
+    trail_right_leg_risk: bool
+    rightmost_leg_risk: confloat(ge=0)  # Float >=0
+    trail_rightmost_leg_risk: bool
+
+    # These will be set in model_validator
+    leftmost_leg_order_type: str = None
+    left_leg_order_type: str = None
+    right_leg_order_type: str = None
+    rightmost_leg_order_type: str = None
+
+    # --- Field Validators ---
+    @field_validator('entry_time', 'exit_time', mode='before')
+    def parse_time(cls, v):
+        if isinstance(v, str):
+            return datetime.strptime(v, '%H:%M:%S').time()
+        return v
+
+    # --- Model Validator ---
+    @model_validator(mode='after')
+    def make_order_types(self):
+        self.leftmost_leg_order_type = 'market_stoploss_trail' if self.trail_leftmost_leg_risk else 'market_stoploss'
+        self.left_leg_order_type = 'market_stoploss_trail' if self.trail_left_leg_risk else 'market_stoploss'
+        self.right_leg_order_type = 'market_stoploss_trail' if self.trail_right_leg_risk else 'market_stoploss'
+        self.rightmost_leg_order_type = 'market_stoploss_trail' if self.trail_rightmost_leg_risk else 'market_stoploss'
+        return self
+
+    @classmethod
+    def get_field_choices_for_simulation(self):
+        return {
+            'leftmost_leg_risk': list(range(1000, 5001, 500)),
+            'trail_leftmost_leg_risk': [True, False],
+            'left_leg_risk': list(range(1000, 5001, 500)),
+            'trail_left_leg_risk': [True, False],
+            'right_leg_risk': list(range(1000, 5001, 500)),
+            'trail_right_leg_risk': [True, False],
+            'rightmost_leg_risk': list(range(1000, 5001, 500)),
+            'trail_rightmost_leg_risk': [True, False],
+            'body_width': [50, 100, 150],
+            'wing_width': [50, 100, 150],
+            'condor_option_type': ['CE', 'PE'],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'condor'
+
+
 STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {
     'straddle': StraddleConfig,
     'weekly_straddle': WeeklyStraddleConfig,
     'strangle': StrangleConfig,
-    'ironbutterfly': IronButterflyConfig,
     'butterfly': ButterflyConfig,
+    'ironbutterfly': IronButterflyConfig,
+    'condor': CondorConfig,
     'ironcondor': IronCondorConfig,
 }
 
