@@ -78,6 +78,7 @@ class Action:
                 lot_type='split',
                 lot_idx=i + 1,  # always starts from 1
                 square_off_id=None,
+                stoploss=self.stoploss,
             )
             for i in range(self.num_lots)
         ]

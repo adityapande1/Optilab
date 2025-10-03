@@ -1,0 +1,13 @@
+name: butterfly # Name of the strategy configuration
+long_or_short: long # Direction of the butterfly position
+entry_time: "09:15:00" # Time to enter the butterfly position
+exit_time: "15:20:00" # Time to exit the butterfly position
+lot_size: 75 # The lot size for the single position
+wing_width: 100 # [ATM STRIKE - LEFT STRIKE] = [RIGHT STRIKE - ATM STRIKE]. Must be a positive multiple of strike_interval (50).
+butterfly_option_type: CE # The option making up for the butterfly strategy. Can be 'CE' or 'PE'.
+atm_risk: inf # Risk for the ATM leg in a butterfly (₹). The leg gets cut if this risk is breached.
+trail_atm_risk: false # Whether to trail the stoploss risk for the ATM leg
+itm_risk: inf # Risk for the ITM leg in a butterfly (₹). The leg gets cut if this risk is breached.
+trail_itm_risk: false # Whether to trail the stoploss risk for the ITM leg.
+otm_risk: inf # Risk for the OTM leg in a butterfly (₹). The leg gets cut if this risk is breached.
+trail_otm_risk: false # Whether to trail the stoploss risk for the OTM leg.

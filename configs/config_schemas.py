@@ -224,13 +224,13 @@ class IronCondorConfig(BaseConfig):
     wing_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
 
     # Leg configs
-    outer_otm_put_risk: confloat(ge=0) # Float >=0
+    outer_otm_put_risk: confloat(ge=0)  # Float >=0
     trail_outer_otm_put_risk: bool
-    inner_otm_put_risk: confloat(ge=0) # Float >=0
+    inner_otm_put_risk: confloat(ge=0)  # Float >=0
     trail_inner_otm_put_risk: bool
-    inner_otm_call_risk: confloat(ge=0) # Float >=0
+    inner_otm_call_risk: confloat(ge=0)  # Float >=0
     trail_inner_otm_call_risk: bool
-    outer_otm_call_risk: confloat(ge=0) # Float >=0
+    outer_otm_call_risk: confloat(ge=0)  # Float >=0
     trail_outer_otm_call_risk: bool
 
     # These will be set in model_validator
@@ -276,11 +276,68 @@ class IronCondorConfig(BaseConfig):
         return 'ironcondor'
 
 
+class ButterflyConfig(BaseConfig):
+    # Overall strategy configs
+    name: str
+    long_or_short: Literal['long', 'short']  # Either 'long' or 'short'
+    entry_time: time
+    exit_time: time
+    lot_size: conint(gt=0)  # Integer >0
+    wing_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
+    butterfly_option_type: Literal['CE', 'PE']  # Either 'CE' or 'PE'
+
+    # Leg configs
+    atm_risk: confloat(ge=0)  # Float >=0
+    trail_atm_risk: bool
+    otm_risk: confloat(ge=0)  # Float >=0
+    trail_otm_risk: bool
+    itm_risk: confloat(ge=0)  # Float >=0
+    trail_itm_risk: bool
+
+    # These will be set in model_validator
+    atm_order_type: str = None
+    otm_order_type: str = None
+    itm_order_type: str = None
+
+    # --- Field Validators ---
+    @field_validator('entry_time', 'exit_time', mode='before')
+    def parse_time(cls, v):
+        if isinstance(v, str):
+            return datetime.strptime(v, '%H:%M:%S').time()
+        return v
+
+    # --- Model Validator ---
+    @model_validator(mode='after')
+    def make_order_types(self):
+        self.atm_order_type = 'market_stoploss_trail' if self.trail_atm_risk else 'market_stoploss'
+        self.otm_order_type = 'market_stoploss_trail' if self.trail_otm_risk else 'market_stoploss'
+        self.itm_order_type = 'market_stoploss_trail' if self.trail_itm_risk else 'market_stoploss'
+        return self
+
+    @classmethod
+    def get_field_choices_for_simulation(self):
+        return {
+            'atm_risk': list(range(1000, 5001, 500)),
+            'trail_atm_risk': [True, False],
+            'otm_risk': list(range(1000, 5001, 500)),
+            'trail_otm_risk': [True, False],
+            'itm_risk': list(range(1000, 5001, 500)),
+            'trail_itm_risk': [True, False],
+            'wing_width': [50, 100, 150],
+            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'butterfly'
+
+
 STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {
     'straddle': StraddleConfig,
     'weekly_straddle': WeeklyStraddleConfig,
     'strangle': StrangleConfig,
     'ironbutterfly': IronButterflyConfig,
+    'butterfly': ButterflyConfig,
     'ironcondor': IronCondorConfig,
 }
 

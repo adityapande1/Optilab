@@ -36,7 +36,7 @@ class BaseBackTester(Backtester):
         )[['open', 'high', 'low', 'close']]
         entry_timestamp = order_stats['timestamp']  # start_timestamp is the entry time when order was filled
 
-        if self.strategy.name in ('Straddle', 'Strangle', 'IronButterfly', 'IronCondor'):
+        if self.strategy.name in ('Straddle', 'Strangle', 'IronButterfly', 'IronCondor', 'Butterfly'):
             max_possible_exit_timestamp = pd.Timestamp.combine(entry_timestamp.date(), self.strategy.config.exit_time)  # Straddle exits on the same day
         elif self.strategy.name == 'WeeklyStraddle':
             max_possible_exit_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp, None)  # WeeklyStraddle exits on a future date
