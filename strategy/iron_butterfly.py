@@ -18,7 +18,6 @@ class IronButterfly(Strategy):
     def action(self, timestamp: pd.Timestamp) -> list[Action] | None:
         actions = None
         if timestamp.time() == self.config.entry_time:
-
             atm_strike = self.dbconnector.get_ATM_strike(timestamp)
             otm_put_strike = atm_strike - self.config.wing_width
             otm_call_strike = atm_strike + self.config.wing_width
@@ -68,50 +67,82 @@ class IronButterfly(Strategy):
 
         return actions
 
+    # def about(self) -> str:
+    #     if self.config.long_or_short == 'short':
+    #         about_str = f'Name : {self.name} : _/\_ \n'
+    #     elif self.config.long_or_short == 'long':
+    #         about_str = f'Name : {self.name} : ‾\/‾\n'
+
+    #     if self.config.long_or_short == 'short':
+    #         desc = 'Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Profit : limited, Risk : limited'
+    #     elif self.config.long_or_short == 'long':
+    #         desc = 'Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Profit : limited, Risk : limited'
+
+    #     about_str += f'Description : {desc}\n'
+    #     about_str += f'Wing Width = [OTM Call Strike - ATM Strike] = [ATM Strike - OTM Put Strike] = {self.config.wing_width}\n'
+
+    #     about_str += 'For each day, If market is open\n'
+    #     about_str += (
+    #         f'     Enter an Iron Butterfly of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying. The OTM call strikes are : ATM Strike ± {self.config.wing_width}\n'
+    #     )
+
+    #     if self.config.long_or_short == 'short':
+    #         opposite_pos = 'long'
+    #     elif self.config.long_or_short == 'long':
+    #         opposite_pos = 'short'
+
+    #     about_str += f'NET POSTITON: \n'
+    #     about_str += f'     {self.config.long_or_short.upper()} : [ATM Call and ATM Put] and {opposite_pos.upper()} [OTM Put and OTM Call] according to close at {self.config.entry_time.strftime("%H:%M:%S")}\n'
+    #     about_str += f'     EXIT ALL LEGS AUTOMATICALLY at EXIT TIME : {self.config.exit_time.strftime("%H:%M:%S")}\n'
+
+    #     about_str += f'     The Legs are : \n'
+    #     about_str += f'     1. OTM PUT of strike = ATM Strike - {self.config.wing_width}\n'
+    #     about_str += f'          POS : {opposite_pos.upper()} | RISK : ₹ {self.config.otm_call_risk}\n'
+    #     about_str += f'          StopLoss condition : If otm_put_leg_loss >= {self.config.otm_put_risk} \n'
+    #     about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_otm_put_risk else "FIXED STOPLOSS"}\n'
+    #     about_str += f'     2. ATM PUT of strike = ATM Strike\n'
+    #     about_str += f'          POS : {self.config.long_or_short.upper()} | RISK : ₹ {self.config.atm_put_risk}\n'
+    #     about_str += f'          StopLoss condition : If atm_put_leg_loss >= {self.config.atm_put_risk} \n'
+    #     about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_atm_put_risk else "FIXED STOPLOSS"}\n'
+    #     about_str += f'     3. ATM CALL of strike = ATM Strike\n'
+    #     about_str += f'          POS : {self.config.long_or_short.upper()} | RISK : ₹ {self.config.atm_call_risk}\n'
+    #     about_str += f'          StopLoss condition : If atm_call_leg_loss >= {self.config.atm_call_risk} \n'
+    #     about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_atm_call_risk else "FIXED STOPLOSS"}\n'
+    #     about_str += f'     4. OTM CALL of strike = ATM Strike + {self.config.wing_width}\n'
+    #     about_str += f'          POS : {opposite_pos.upper()} | RISK : ₹ {self.config.otm_call_risk}\n'
+    #     about_str += f'          StopLoss condition : If otm_call_leg_loss >= {self.config.otm_call_risk} \n'
+    #     about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_otm_call_risk else "FIXED STOPLOSS"}\n'
+
+    #     return about_str
+
     def about(self) -> str:
+        opposite_pos = 'short' if self.config.long_or_short == 'long' else 'long'
+
         if self.config.long_or_short == 'short':
-            about_str = f'Name : {self.name} : _/\_ \n'
+            about_str = f'Name : {self.name} : _/\\_ \n'
         elif self.config.long_or_short == 'long':
-            about_str = f'Name : {self.name} : ‾\/‾\n'
+            about_str = f'Name : {self.name} : ‾\\/‾\n'
 
         if self.config.long_or_short == 'short':
             desc = 'Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Profit : limited, Risk : limited'
         elif self.config.long_or_short == 'long':
             desc = 'Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Profit : limited, Risk : limited'
 
-        about_str += f'Description : {desc}\n'
-        about_str += f'Wing Width = [OTM Call Strike - ATM Strike] = [ATM Strike - OTM Put Strike] = {self.config.wing_width}\n'
+        about_str += f'\nDescription : {desc}\n'
+        about_str += f'Wing Width = [OTM Call Strike - ATM Strike] = [ATM Strike - OTM Put Strike] = {self.config.wing_width}\n\n'
 
-        about_str += 'For each day, If market is open\n'
-        about_str += (
-            f'     Enter an Iron Butterfly of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying. The OTM call strikes are : ATM Strike ± {self.config.wing_width}\n'
-        )
+        about_str += f'Enter an Iron Butterfly each day of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying.\n'
+        about_str += f'Exit all positions at {self.config.exit_time.strftime("%H:%M:%S")} , if stoploss not hit.\n\n'
 
-        if self.config.long_or_short == 'short':
-            opposite_pos = 'long'
-        elif self.config.long_or_short == 'long':
-            opposite_pos = 'short'
+        about_str += f'NET POSITION:\n'
+        about_str += f'     {self.config.long_or_short.upper()} : [ATM Call and ATM Put]\n'
+        about_str += f'     {opposite_pos.upper()} : [OTM Put and OTM Call]\n\n'
 
-        about_str += f'NET POSTITON: \n'
-        about_str += f'     {self.config.long_or_short.upper()} : [ATM Call and ATM Put] and {opposite_pos.upper()} [OTM Put and OTM Call] according to close at {self.config.entry_time.strftime("%H:%M:%S")}\n'
-        about_str += f'     EXIT ALL LEGS AUTOMATICALLY at EXIT TIME : {self.config.exit_time.strftime("%H:%M:%S")}\n'
-
-        about_str += f'     The Legs are : \n'
-        about_str += f'     1. OTM PUT of strike = ATM Strike - {self.config.wing_width}\n'
-        about_str += f'          POS : {opposite_pos.upper()} | RISK : ₹ {self.config.otm_call_risk}\n'
-        about_str += f'          StopLoss condition : If otm_put_leg_loss >= {self.config.otm_put_risk} \n'
-        about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_otm_put_risk else "FIXED STOPLOSS"}\n'
-        about_str += f'     2. ATM PUT of strike = ATM Strike\n'
-        about_str += f'          POS : {self.config.long_or_short.upper()} | RISK : ₹ {self.config.atm_put_risk}\n'
-        about_str += f'          StopLoss condition : If atm_put_leg_loss >= {self.config.atm_put_risk} \n'
-        about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_atm_put_risk else "FIXED STOPLOSS"}\n'
-        about_str += f'     3. ATM CALL of strike = ATM Strike\n'
-        about_str += f'          POS : {self.config.long_or_short.upper()} | RISK : ₹ {self.config.atm_call_risk}\n'
-        about_str += f'          StopLoss condition : If atm_call_leg_loss >= {self.config.atm_call_risk} \n'
-        about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_atm_call_risk else "FIXED STOPLOSS"}\n'
-        about_str += f'     4. OTM CALL of strike = ATM Strike + {self.config.wing_width}\n'
-        about_str += f'          POS : {opposite_pos.upper()} | RISK : ₹ {self.config.otm_call_risk}\n'
-        about_str += f'          StopLoss condition : If otm_call_leg_loss >= {self.config.otm_call_risk} \n'
-        about_str += f'          Exit Type : {"TRAILING STOPLOSS" if self.config.trail_otm_call_risk else "FIXED STOPLOSS"}\n'
+        about_str += 'POSITIONS TABLE:\n'
+        about_str += f'     | {"LEG":<12} | {"POSITION":<8} | {"RISK (₹)":<10} | {"STOPLOSS":<25} | {"EXIT TYPE":<18} | {"STRIKE":<24} |\n'
+        about_str += f'     | {"OTM PUT":<12} | {opposite_pos:<8} | {self.config.otm_put_risk:<10} | {"otm_put_leg_loss >= " + str(self.config.otm_put_risk):<25} | {("TRAILING" if self.config.trail_otm_put_risk else "FIXED") + " STOPLOSS":<18} | {"ATM Strike - " + str(self.config.wing_width):<24} |\n'
+        about_str += f'     | {"ATM PUT":<12} | {self.config.long_or_short:<8} | {self.config.atm_put_risk:<10} | {"atm_put_leg_loss >= " + str(self.config.atm_put_risk):<25} | {("TRAILING" if self.config.trail_atm_put_risk else "FIXED") + " STOPLOSS":<18} | {"ATM Strike":<24} |\n'
+        about_str += f'     | {"ATM CALL":<12} | {self.config.long_or_short:<8} | {self.config.atm_call_risk:<10} | {"atm_call_leg_loss >= " + str(self.config.atm_call_risk):<25} | {("TRAILING" if self.config.trail_atm_call_risk else "FIXED") + " STOPLOSS":<18} | {"ATM Strike":<24} |\n'
+        about_str += f'     | {"OTM CALL":<12} | {opposite_pos:<8} | {self.config.otm_call_risk:<10} | {"otm_call_leg_loss >= " + str(self.config.otm_call_risk):<25} | {("TRAILING" if self.config.trail_otm_call_risk else "FIXED") + " STOPLOSS":<18} | {"ATM Strike + " + str(self.config.wing_width):<24} |\n'
 
         return about_str

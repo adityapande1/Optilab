@@ -8,7 +8,7 @@ import os
 from abc import ABC, abstractmethod
 from connectors.dbconnector import DBConnector
 from strategy import Strategy
-from constants import BACKTEST_RESULTS_FOLDERPATH
+from constants import BACKTEST_RESULTS_FOLDERPATH, SSD_BACKTEST_RESULTS_FOLDERPATH
 from typing import Union
 from backtest.metrics import update_metric_pnl
 from tqdm import tqdm
@@ -339,6 +339,12 @@ class Backtester(ABC):
             BACKTEST_RESULTS_FOLDERPATH,
             f'{self.strategy.name}__{self.backtest_code}' if foldername is None else foldername,
         )
+
+        # folder_path = os.path.join(
+        #     SSD_BACKTEST_RESULTS_FOLDERPATH,
+        #     f'{self.strategy.name}__{self.backtest_code}' if foldername is None else foldername,
+        # )
+
         os.makedirs(folder_path, exist_ok=True)
 
         # Configs
@@ -346,17 +352,17 @@ class Backtester(ABC):
         self.config.save(filepath=os.path.join(folder_path, 'backtester_config.pkl'))
 
         # All positions
-        positions_folder_path = os.path.join(folder_path, 'positions')
-        os.makedirs(positions_folder_path, exist_ok=True)
-        for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
-            df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
+        # positions_folder_path = os.path.join(folder_path, 'positions')
+        # os.makedirs(positions_folder_path, exist_ok=True)
+        # for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
+        #     df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
 
         # All actions
-        actions_folder = os.path.join(folder_path, 'actions')
-        os.makedirs(actions_folder, exist_ok=True)
-        # Position tally data
-        for hash, position_dict in self.strategy.position_tally.items():
-            position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
+        # actions_folder = os.path.join(folder_path, 'actions')
+        # os.makedirs(actions_folder, exist_ok=True)
+        # # Position tally data
+        # for hash, position_dict in self.strategy.position_tally.items():
+        #     position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
 
         # final portfolio metrics
         self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, 'df_portfolio_metrics.parquet'))  # Save portfolio metrics

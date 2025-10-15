@@ -3,7 +3,6 @@ from connectors.dbconnector import DBConnector
 import pandas as pd
 from utils.option_utils import get_lower_upper_strikes_around_spot
 
-
 class IronCondor(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)

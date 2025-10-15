@@ -45,35 +45,68 @@ class Straddle(Strategy):
 
         return actions
 
+    # def about(self) -> str:
+    #     if self.config.long_or_short == 'short':
+    #         about_str = f'Name : {self.name} : /\ \n'
+    #     elif self.config.long_or_short == 'long':
+    #         about_str = f'Name : {self.name} : \/ \n'
+
+    #     if self.config.long_or_short == 'short':
+    #         desc = 'Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Risk : unlimited'
+    #     elif self.config.long_or_short == 'long':
+    #         desc = 'Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited'
+    #     about_str += f'Description : {desc}\n'
+
+    #     about_str += f'Our Net Position : {self.config.long_or_short.upper()}\n'
+    #     about_str += f'ATM CALL Params: '
+    #     about_str += f'RISK : ₹ {self.config.call_risk}, TRAIL_RISK : {self.config.trail_call_risk} |\n'
+    #     about_str += f'ATM PUT  Params: '
+    #     about_str += f'RISK : ₹ {self.config.put_risk}, TRAIL_RISK : {self.config.trail_put_risk} |\n'
+
+    #     about_str += f'For each day, If market is open\n'
+    #     about_str += f'     Enter an Straddle of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying\n'
+
+    #     about_str += f'     Net position: \n'
+    #     about_str += f'        {self.config.long_or_short.upper()} : [ATM Call and ATM Put] of strike according to close at {self.config.entry_time.strftime("%H:%M:%S")} (X2)\n'
+    #     about_str += f'     1. EXIT : If time is {self.config.exit_time.strftime("%H:%M:%S")} is reached\n'
+
+    #     about_str += f'     2. EXIT call_leg : \n'
+    #     about_str += f'             StopLoss condition : If call_leg_loss >= {self.config.call_risk} {"(trailing)" if self.config.trail_call_risk else "(fixed)"}\n'
+
+    #     about_str += f'     3. EXIT put_leg : \n'
+    #     about_str += f'             StopLoss condition : If put_leg_loss >= {self.config.put_risk} {"(trailing)" if self.config.trail_put_risk else "(fixed)"}\n'
+
+    #     return about_str
+
+
     def about(self) -> str:
+
+        opposite_pos = 'short' if self.config.long_or_short == 'long' else 'long'
+
         if self.config.long_or_short == 'short':
-            about_str = f'Name : {self.name} : /\ \n'
+            about_str = f'Name : {self.name} : /\\ \n'
         elif self.config.long_or_short == 'long':
-            about_str = f'Name : {self.name} : \/ \n'
+            about_str = f'Name : {self.name} : \\/ \n'
 
         if self.config.long_or_short == 'short':
             desc = 'Neutral strategy. Profits from low volatility. Profits when the market is range-bound. TimeDecay on our side. Risk : unlimited'
         elif self.config.long_or_short == 'long':
             desc = 'Needs large price movements (in any side) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited'
-        about_str += f'Description : {desc}\n'
 
-        about_str += f'Our Net Position : {self.config.long_or_short.upper()}\n'
-        about_str += f'ATM CALL Params: '
-        about_str += f'RISK : ₹ {self.config.call_risk}, TRAIL_RISK : {self.config.trail_call_risk} |\n'
-        about_str += f'ATM PUT  Params: '
-        about_str += f'RISK : ₹ {self.config.put_risk}, TRAIL_RISK : {self.config.trail_put_risk} |\n'
+        about_str += f'\nDescription : {desc}\n'
+        about_str += f'Net Position : {self.config.long_or_short.upper()}\n\n'
 
-        about_str += f'For each day, If market is open\n'
-        about_str += f'     Enter an Straddle of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying\n'
- 
-        about_str += f'     Net position: \n'
-        about_str += f'        {self.config.long_or_short.upper()} : [ATM Call and ATM Put] of strike according to close at {self.config.entry_time.strftime("%H:%M:%S")} (X2)\n'
-        about_str += f'     1. EXIT : If time is {self.config.exit_time.strftime("%H:%M:%S")} is reached\n'
+        about_str += 'POSITION DETAILS:\n'
+        about_str += f'     | {"LEG":<10} | {"POSITION":<10} | {"STOPLOSS":<10} | {"TRAIL STOPLOSS":<15} |\n'
+        about_str += f'     | {"ATM CALL":<10} | {self.config.long_or_short:<10} | {self.config.call_risk:<10} | {self.config.trail_call_risk:<15} |\n'
+        about_str += f'     | {"ATM PUT":<10} | {self.config.long_or_short:<10} | {self.config.put_risk:<10} | {self.config.trail_put_risk:<15} |\n\n'
 
-        about_str += f'     2. EXIT call_leg : \n'
-        about_str += f'             StopLoss condition : If call_leg_loss >= {self.config.call_risk} {"(trailing)" if self.config.trail_call_risk else "(fixed)"}\n'
+        about_str += f'Enter a Straddle each day of (nearest) ATM at {self.config.entry_time.strftime("%H:%M:%S")} at close of underlying.\n'
+        about_str += f'Exit all positions at {self.config.exit_time.strftime("%H:%M:%S")} , if stoploss not hit.\n\n'
 
-        about_str += f'     3. EXIT put_leg : \n'
-        about_str += f'             StopLoss condition : If put_leg_loss >= {self.config.put_risk} {"(trailing)" if self.config.trail_put_risk else "(fixed)"}\n'
+        about_str += 'EXIT RULES:\n'
+        about_str += f'     1. EXIT : If time is {self.config.exit_time.strftime("%H:%M:%S")}.\n'
+        about_str += f'     2. EXIT CALL leg : StopLoss hit → {self.config.call_risk} {"(trailing)" if self.config.trail_call_risk else "(fixed)"}.\n'
+        about_str += f'     3. EXIT PUT leg  : StopLoss hit → {self.config.put_risk} {"(trailing)" if self.config.trail_put_risk else "(fixed)"}.\n'
 
         return about_str

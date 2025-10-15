@@ -27,10 +27,10 @@ class BacktestAnalyzer:
         self.about_file_txt_path = os.path.join(self.backtest_results_dir, self.folder_name, 'about_strategy.txt')
         self.folder_hash_file_txt_path = os.path.join(self.backtest_results_dir, self.folder_name, 'folder_hash.txt')
         self.folder_hash = self.get_folder_hash()
-        self.action_hashes = self.get_action_hashes()
-        self.position_hashes = self.get_position_hashes()
-        self.missing_action_hashes = self.action_hashes - self.position_hashes
-        self.missing_position_hashes = self.position_hashes - self.action_hashes
+        # self.action_hashes = self.get_action_hashes()
+        # self.position_hashes = self.get_position_hashes()
+        # self.missing_action_hashes = self.action_hashes - self.position_hashes
+        # self.missing_position_hashes = self.position_hashes - self.action_hashes
 
     def get_strategy_config(self):
         strategy_config = {}

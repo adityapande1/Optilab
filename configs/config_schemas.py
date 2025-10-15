@@ -65,12 +65,20 @@ class StraddleConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'call_risk': list(range(1000, 8001, 500)),
-            'put_risk': list(range(1000, 8001, 500)),
+            'call_risk': list(range(1500, 7501, 250)),
+            'put_risk': list(range(1500, 7501, 250)),
             'trail_call_risk': [True, False],
             'trail_put_risk': [True, False],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('call_risk', 'put_risk'),
+            ('trail_call_risk', 'trail_put_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
@@ -103,12 +111,20 @@ class WeeklyStraddleConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'call_risk': list(range(1000, 8001, 500)),
-            'put_risk': list(range(1000, 8001, 500)),
+            'call_risk': list(range(1500, 7501, 250)),
+            'put_risk': list(range(1500, 7501, 250)),
             'trail_call_risk': [True, False],
             'trail_put_risk': [True, False],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('call_risk', 'put_risk'),
+            ('trail_call_risk', 'trail_put_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
@@ -143,13 +159,21 @@ class StrangleConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'otm_call_risk': list(range(1000, 8001, 500)),
-            'otm_put_risk': list(range(1000, 8001, 500)),
+            'otm_call_risk': list(range(1500, 7501, 250)),
+            'otm_put_risk': list(range(1500, 7501, 250)),
             'trail_call_risk': [True, False],
             'trail_put_risk': [True, False],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
             'spread_width': [50, 100, 150, 200],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('otm_call_risk', 'otm_put_risk'),
+            ('trail_call_risk', 'trail_put_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
@@ -196,17 +220,27 @@ class IronButterflyConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'otm_put_risk': list(range(1000, 5001, 500)),
+            'otm_put_risk': list(range(2250, 7501, 750)),
             'trail_otm_put_risk': [True, False],
-            'atm_put_risk': list(range(1000, 5001, 500)),
+            'atm_put_risk': list(range(2250, 7501, 750)),
             'trail_atm_put_risk': [True, False],
-            'atm_call_risk': list(range(1000, 5001, 500)),
+            'atm_call_risk': list(range(2250, 7501, 750)),
             'trail_atm_call_risk': [True, False],
-            'otm_call_risk': list(range(1000, 5001, 500)),
+            'otm_call_risk': list(range(2250, 7501, 750)),
             'trail_otm_call_risk': [True, False],
             'wing_width': [50, 100, 150],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('otm_put_risk', 'otm_call_risk'),
+            ('trail_otm_put_risk', 'trail_otm_call_risk'),
+            ('atm_put_risk', 'atm_call_risk'),
+            ('trail_atm_put_risk', 'trail_atm_call_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
@@ -258,18 +292,28 @@ class IronCondorConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'outer_otm_put_risk': list(range(1000, 5001, 500)),
+            'outer_otm_put_risk': list(range(2250, 7501, 750)),
             'trail_outer_otm_put_risk': [True, False],
-            'inner_otm_put_risk': list(range(1000, 5001, 500)),
+            'inner_otm_put_risk': list(range(2250, 7501, 750)),
             'trail_inner_otm_put_risk': [True, False],
-            'inner_otm_call_risk': list(range(1000, 5001, 500)),
+            'inner_otm_call_risk': list(range(2250, 7501, 750)),
             'trail_inner_otm_call_risk': [True, False],
-            'outer_otm_call_risk': list(range(1000, 5001, 500)),
+            'outer_otm_call_risk': list(range(2250, 7501, 750)),
             'trail_outer_otm_call_risk': [True, False],
             'body_width': [50, 100, 150],
             'wing_width': [50, 100, 150],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('outer_otm_put_risk', 'outer_otm_call_risk'),
+            ('trail_outer_otm_put_risk', 'trail_outer_otm_call_risk'),
+            ('inner_otm_put_risk', 'inner_otm_call_risk'),
+            ('trail_inner_otm_put_risk', 'trail_inner_otm_call_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
@@ -317,16 +361,24 @@ class ButterflyConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'atm_risk': list(range(1000, 5001, 500)),
+            'atm_risk': list(range(2250, 7501, 750)),
             'trail_atm_risk': [True, False],
-            'otm_risk': list(range(1000, 5001, 500)),
+            'otm_risk': list(range(2250, 7501, 750)),
             'trail_otm_risk': [True, False],
-            'itm_risk': list(range(1000, 5001, 500)),
+            'itm_risk': list(range(2250, 7501, 750)),
             'trail_itm_risk': [True, False],
             'wing_width': [50, 100, 150],
             'butterfly_option_type': ['CE', 'PE'],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('otm_risk', 'itm_risk'),
+            ('trail_otm_risk', 'trail_itm_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
@@ -379,19 +431,29 @@ class CondorConfig(BaseConfig):
     @classmethod
     def get_field_choices_for_simulation(self):
         return {
-            'leftmost_leg_risk': list(range(1000, 5001, 500)),
+            'leftmost_leg_risk': list(range(2250, 7501, 750)),
             'trail_leftmost_leg_risk': [True, False],
-            'left_leg_risk': list(range(1000, 5001, 500)),
+            'left_leg_risk': list(range(2250, 7501, 750)),
             'trail_left_leg_risk': [True, False],
-            'right_leg_risk': list(range(1000, 5001, 500)),
+            'right_leg_risk': list(range(2250, 7501, 750)),
             'trail_right_leg_risk': [True, False],
-            'rightmost_leg_risk': list(range(1000, 5001, 500)),
+            'rightmost_leg_risk': list(range(2250, 7501, 750)),
             'trail_rightmost_leg_risk': [True, False],
             'body_width': [50, 100, 150],
             'wing_width': [50, 100, 150],
             'condor_option_type': ['CE', 'PE'],
-            'entry_time': ['9:15:00', '9:30:00', '10:00:00'],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
         }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('leftmost_leg_risk', 'rightmost_leg_risk'),
+            ('trail_leftmost_leg_risk', 'trail_rightmost_leg_risk'),
+            ('left_leg_risk', 'right_leg_risk'),
+            ('trail_left_leg_risk', 'trail_right_leg_risk'),
+        ]
+        return matching_field_pairs
 
     @classmethod
     def get_name(cls):
