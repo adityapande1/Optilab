@@ -38,7 +38,6 @@ class BaseConfig(BaseModel):
 # STRATEGY Configs
 #########################################################################################
 
-
 class StraddleConfig(BaseConfig):
     name: str
     call_risk: float
@@ -245,6 +244,65 @@ class IronButterflyConfig(BaseConfig):
     @classmethod
     def get_name(cls):
         return 'ironbutterfly'
+
+
+class IronButterflyHedgedConfig(BaseConfig):
+
+    # Overall strategy configs
+    name: str
+    long_or_short: Literal['long', 'short']  # Either 'long' or 'short'
+    entry_time: time
+    exit_time: time
+    lot_size: conint(gt=0)  # Integer >0
+    wing_width: conint(gt=0, multiple_of=50)  # Constrained Integer > 0 and multiple of 50
+    margin_required: confloat(gt=0)  # Float >0
+
+    # Leg configs
+    bull_put_spread_risk: confloat(ge=0)  # Float >=0
+    trail_bull_put_spread_risk: bool
+    bear_call_spread_risk: confloat(ge=0)  # Float >=0
+    trail_bear_call_spread_risk: bool
+
+    # These will be set in model_validator
+    otm_put_order_type: str = None
+    atm_call_order_type: str = None
+    atm_put_order_type: str = None
+    otm_call_order_type: str = None
+
+    @field_validator('entry_time', 'exit_time', mode='before')
+    def parse_time(cls, v):
+        return datetime.strptime(v, '%H:%M:%S').time()
+
+    @model_validator(mode='after')
+    def make_order_types(self):
+        self.otm_put_order_type = 'market_stoploss_trail' if self.trail_bull_put_spread_risk else 'market_stoploss'
+        self.atm_put_order_type = 'market_stoploss_trail' if self.trail_bull_put_spread_risk else 'market_stoploss'
+        self.atm_call_order_type = 'market_stoploss_trail' if self.trail_bear_call_spread_risk else 'market_stoploss'
+        self.otm_call_order_type = 'market_stoploss_trail' if self.trail_bear_call_spread_risk else 'market_stoploss'
+        return self
+
+    @classmethod
+    def get_field_choices_for_simulation(self):
+        return {
+            'bull_put_spread_risk': list(range(750, 9001, 750)),
+            'trail_bull_put_spread_risk': [True, False],
+            'bear_call_spread_risk': list(range(750, 9001, 750)),
+            'trail_bear_call_spread_risk': [True, False],
+            'wing_width': [50, 100, 150],
+            'entry_time': ['9:15:00', '9:20:00', '09:30:00'],
+        }
+
+    @classmethod
+    def get_field_pairs_that_should_be_same_during_simulation(cls) -> list[tuple[str, str]]:
+        matching_field_pairs = [
+            ('bull_put_spread_risk', 'bear_call_spread_risk'),
+            ('trail_bull_put_spread_risk', 'trail_bear_call_spread_risk'),
+        ]
+        return matching_field_pairs
+
+    @classmethod
+    def get_name(cls):
+        return 'ironbutterfly_hedged'
 
 
 class IronCondorConfig(BaseConfig):
@@ -468,6 +526,7 @@ STRATEGY_NAME_TO_STRATEGY_CONFIG_MAP = {
     'ironbutterfly': IronButterflyConfig,
     'condor': CondorConfig,
     'ironcondor': IronCondorConfig,
+    'ironbutterfly_hedged': IronButterflyHedgedConfig,
 }
 
 ###############################################################
@@ -495,7 +554,6 @@ class BaseBacktesterConfig(BaseConfig):
     def get_name(cls):
         return 'base_backtester'
 
-
 class PositionalBacktesterConfig(BaseConfig):
     name: str
     start_date: date
@@ -504,6 +562,7 @@ class PositionalBacktesterConfig(BaseConfig):
     lot_size: int
     results_dir: str
     total_position_risk: float
+    trail_total_position_risk: bool
 
     @field_validator('start_date', 'end_date', mode='before')
     def parse_dates(cls, v):
@@ -511,14 +570,40 @@ class PositionalBacktesterConfig(BaseConfig):
 
     @classmethod
     def get_field_choices_for_simulation(self):
-        return {'total_position_risk': list(range(1000, 20001, 1000))}
+        return {
+            'total_position_risk': list(range(1000, 20001, 1000)),
+            'trail_total_position_risk': [True, False],
+        }
+
+    @classmethod
+    def get_name(cls):
+        return 'positional_backtester'
+
+class HedgedBacktesterConfig(BaseConfig):
+    name: str
+    start_date: date
+    end_date: date
+    per_lot_transaction_cost: float
+    lot_size: int
+    results_dir: str
+
+    @field_validator('start_date', 'end_date', mode='before')
+    def parse_dates(cls, v):
+        return pd.Timestamp(v).date()
+
+    @classmethod
+    def get_field_choices_for_simulation(self):
+        return {}
 
     @classmethod
     def get_name(cls):
         return 'positional_backtester'
 
 
+
+
 BACKTESTER_NAME_TO_BACKTESTER_CONFIG_MAP = {
     'base_backtester': BaseBacktesterConfig,
     'positional_backtester': PositionalBacktesterConfig,
+    'hedged_backtester': HedgedBacktesterConfig,
 }

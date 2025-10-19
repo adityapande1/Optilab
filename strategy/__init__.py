@@ -225,6 +225,7 @@ class Strategy(ABC):
                 assert position_to_remove, f'INVALID SQUARE-OFF. A filled position does not exist in {self.position}.'
                 self.position_tally[order_stats['action'].square_off_id]['closed'] = order_stats
                 self.position.remove(position_to_remove)
+                
             # 2. Else, simply add to self.position
             else:
                 self.position.append(order_stats)

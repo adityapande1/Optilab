@@ -1,0 +1,11 @@
+name: ironbutterfly_hedged # Name of the strategy configuration
+long_or_short: short # Direction of the iron butterfly position
+entry_time: "09:15:00" # Time to enter the iron butterfly position
+exit_time: "15:20:00" # Time to exit the iron butterfly position
+lot_size: 75 # The lot size for the single position
+wing_width: 100 # The width of the wings in the iron butterfly [ATM STRIKE - OTM PUT STRIKE] = [OTM CALL STRIKE - ATM STRIKE]. Must be a positive multiple of strike_interval (50).
+bull_put_spread_risk: inf # Risk for the bull put spread in an iron butterfly (₹). The spread gets cut if this risk is breached.
+trail_bull_put_spread_risk: false # Whether to trail the stoploss risk for the bull put spread.
+bear_call_spread_risk: inf # Risk for the bear call spread in an iron butterfly (₹). The spread gets cut if this risk is breached.
+trail_bear_call_spread_risk: false # Whether to trail the stoploss risk for the bear call spread.
+margin_required: 95000 # The margin requirement for the iron butterfly position (₹). ₹ 94233 on 2025-10-17 [Sensibull].

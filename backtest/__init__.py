@@ -135,7 +135,7 @@ class Backtester(ABC):
 
     def get_stoploss_actions(self, timestamp: pd.Timestamp) -> Union[list[Action], None]:
         """
-        Get a list of stoploss actions for the current `timestamp`.
+        Get a list of stoploss actions for the current `timestamp` from `self.exit_timestamp_to_squareoffids_map`.
 
         - `self.exit_timestamp_to_squareoffids_map` maps an exit timestamp to a set of square_off_ids for which stoploss conditions were met at that exit timestamp.
 
@@ -254,7 +254,7 @@ class Backtester(ABC):
             self.df_portfolio_metrics[metric_name] = metric_default_val
             self.df_portfolio_metrics[metric_name] = self.df_portfolio_metrics[metric_name].astype(metric_variable_type)
 
-    def update_step_metrics(self, timestamp: pd.Timestamp, metadata, valid_timestamps: pd.Index):
+    def update_step_metrics(self):
         for hash, tally_dict in self.strategy.position_tally.items():
             if (tally_dict['closed'] is not None) and (hash not in self.orderhash_to_dfposition_map):  # meaning the open position has been closed and df_position can now be completely made
                 order_hash = tally_dict['closed']['action'].square_off_id
@@ -352,17 +352,17 @@ class Backtester(ABC):
         self.config.save(filepath=os.path.join(folder_path, 'backtester_config.pkl'))
 
         # All positions
-        # positions_folder_path = os.path.join(folder_path, 'positions')
-        # os.makedirs(positions_folder_path, exist_ok=True)
-        # for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
-        #     df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
+        positions_folder_path = os.path.join(folder_path, 'positions')
+        os.makedirs(positions_folder_path, exist_ok=True)
+        for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
+            df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
 
         # All actions
-        # actions_folder = os.path.join(folder_path, 'actions')
-        # os.makedirs(actions_folder, exist_ok=True)
-        # # Position tally data
-        # for hash, position_dict in self.strategy.position_tally.items():
-        #     position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
+        actions_folder = os.path.join(folder_path, 'actions')
+        os.makedirs(actions_folder, exist_ok=True)
+        # Position tally data
+        for hash, position_dict in self.strategy.position_tally.items():
+            position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
 
         # final portfolio metrics
         self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, 'df_portfolio_metrics.parquet'))  # Save portfolio metrics

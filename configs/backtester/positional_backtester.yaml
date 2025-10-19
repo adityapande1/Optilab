@@ -5,3 +5,4 @@ per_lot_transaction_cost: 40.0 # Transaction cost per lot in rupees for one side
 results_dir: BT_RESULT # Directory to save backtest results
 lot_size: 75 # Lot size for trading
 total_position_risk: 5000.0 # Total risk in rupees for the entire position
+trail_total_position_risk: true # Whether to trail the total position risk
