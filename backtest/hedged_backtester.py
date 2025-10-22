@@ -173,10 +173,6 @@ class HedgedBackTester(Backtester):
 
             # 3. Process the 'self.outstanding_orders' at the current timestamp to get filled orders
             filled_orders = self.process_outstanding_orders(current_timestamp)
-            if filled_orders:
-                import ipdb
-
-                ipdb.set_trace()
 
             # 3.1.1
             self._initialize_stoploss_dataframes(filled_orders)
