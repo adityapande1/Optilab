@@ -139,8 +139,8 @@ def generate_combined_ohlc_dataframe(ohlc_dataframes: List[pd.DataFrame], trade_
     # Convert "long"/"short" to +1 / -1
     weights = [1 if t == 'long' else -1 for t in trade_types]
 
-    # Keep only OHLC columns in each df
-    ohlc_list = [df[['open', 'high', 'low', 'close']] for df in ohlc_dataframes]
+    # Keep only OHLC columns in each df also round to 6 decimal places
+    ohlc_list = [df[['open', 'high', 'low', 'close']].round(6) for df in ohlc_dataframes]
 
     # Concatenate all dfs into one wide df with multi-index columns
     df_all = pd.concat(ohlc_list, axis=1, keys=range(len(ohlc_list)))

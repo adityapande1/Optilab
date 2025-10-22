@@ -36,20 +36,18 @@ class BaseBackTester(Backtester):
         )[['open', 'high', 'low', 'close']]
         entry_timestamp = order_stats['timestamp']  # start_timestamp is the entry time when order was filled
 
-        if self.strategy.name in ('Straddle', 'Strangle', 'IronButterfly', 'IronCondor', 'Butterfly', 'Condor'):
+        if self.strategy.name in ('Straddle', 'StraddleDaily'):
             max_possible_exit_timestamp = pd.Timestamp.combine(entry_timestamp.date(), self.strategy.config.exit_time)  # Straddle exits on the same day
-        elif self.strategy.name == 'WeeklyStraddle':
-            max_possible_exit_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp, None)  # WeeklyStraddle exits on a future date
         else:
             raise NotImplementedError(f'max_possible_exit_timestamp for Strategy {self.strategy.name} not implemented in BaseBackTester')
 
         df_option = df_option.loc[(df_option.index >= entry_timestamp) & (df_option.index <= max_possible_exit_timestamp)].copy()
 
         assert not df_option.empty, f'df_option is empty for order_stats : {order_stats}'
-        df_stoploss = self.calculate_stoploss_levels(
+        df_stoploss = self.get_dataframe_with_stoploss_info(
             df=df_option,
             starting_stoploss_level=order_stats['stoploss_price_level'],
-            position_type=order_stats['trade_type'],
+            trade_type=order_stats['trade_type'],
             trail_stoploss=(order_stats['action'].order_type == 'market_stoploss_trail'),
         )
 
@@ -57,18 +55,14 @@ class BaseBackTester(Backtester):
 
     def _initialize_stoploss_dataframes(self, filled_orders: list[dict]) -> None:
         """
-        Adds a stoploss_dataframe to `self.orderhash_to_dfstoploss_map` for each filled order in `filled_orders` if order type is either ( 'market_stoploss' or 'market_stoploss_trail')
-
-        Parameters
-        ----------
-        filled_orders : A list of dictionaries containing order statistics for `filled` orders. See example below.
-
-        Returns
-        -------
-        None : This function modifies the `self.orderhash_to_dfstoploss_map` attribute in place.
-
-        Example `filled_orders` list
-        -------
+        Adds a stoploss_dataframe to `self.orderhash_to_dfstoploss_map` for each filled order in `filled_orders` if order type is either ('market_stoploss' or 'market_stoploss_trail')
+            - If the df_stoploss for order_hash hits stoploss
+        Args:
+            filled_orders : A list of dictionaries containing order statistics for `filled` orders. See example below.
+        Returns:
+            None : This function modifies the `self.orderhash_to_dfstoploss_map` attribute in place.
+        Examples:
+        `filled_orders` list
         >>> filled_orders=[
         ...                {
         ...                    'hash': 14708032500100578527,
@@ -119,9 +113,6 @@ class BaseBackTester(Backtester):
                 validated_actions = self.validate_actions(actions)
                 new_orders = self.get_orders_from_actions(validated_actions, current_timestamp)
                 self.outstanding_orders.extend(new_orders)
-
-            # if actions:
-            #     import ipdb; ipdb.set_trace()
 
             # 3. Process the 'self.outstanding_orders' at the current timestamp to get filled orders
             filled_orders = self.process_outstanding_orders(current_timestamp)

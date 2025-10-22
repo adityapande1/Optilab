@@ -1,0 +1,12 @@
+name: ironcondor_daily # Name of the strategy configuration
+long_or_short: short # Direction of the ironcondor position
+entry_time: "09:15:00" # Time to enter the ironcondor position
+exit_time: "15:20:00" # Time to exit the ironcondor position
+lot_size: 75 # The lot size for the single position
+body_width: 100 # The width/spread between the inner call and  put strikes = | inner_call_strike - inner_put_strike | Must be a multiple of 50
+wing_width: 100 # The width/spread between the call stikes / put strikes = | outer_call_strike - inner_call_strike | = | inner_put_strike - outer_put_strike | Must be a multiple of 50. Note for both call and put wings, the width is the same.
+call_credit_spread_risk: inf # Risk for the call credit spread (also called bear call spread)
+trail_call_credit_spread_risk: false # Whether to trail the call credit spread risk
+put_credit_spread_risk: inf # Risk for the put credit spread (also called bull put spread)
+trail_put_credit_spread_risk: false # Whether to trail the put credit spread risk
+margin_required: 95000 # The margin requirement for the short position (₹). Around ₹ 94,852 on 22/10/2024 [Sensibull]

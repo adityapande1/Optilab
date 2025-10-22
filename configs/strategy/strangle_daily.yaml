@@ -1,0 +1,11 @@
+name: strangle_daily # Name of the strategy configuration
+long_or_short: short # Direction of the strangle position
+entry_time: "09:15:00" # Time to enter the strangle position
+exit_time: "15:20:00" # Time to exit the strangle position
+lot_size: 75 # The lot size for the single position
+body_width: 100 # The width/spread between the call and put strikes = otm_call_strike - otm_put_strike | Must be a multiple of 50
+otm_call_risk: inf # Risk for the OTM call leg in a strangle (₹). The leg gets cut if this risk is breached.
+trail_otm_call_risk: false # Whether to trail the stoploss risk for the OTM call
+otm_put_risk: inf # Risk for the OTM put leg in a strangle (₹). The leg gets cut if this risk is breached.
+trail_otm_put_risk: false # Whether to trail the stoploss risk for the OTM put
+margin_required: 250000 # The margin requirement for the short position (₹). Around ₹ 2.50L on 21/10/2024 [Sensibull]

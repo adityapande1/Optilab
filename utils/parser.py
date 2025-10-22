@@ -81,7 +81,7 @@ class Parser:
         self.parser.add_argument(
             '--end_date',
             type=str,
-            default='2025-08-28',
+            default='2025-09-30',
             metavar='YYYY-MM-DD',
             help='Backtest end date',
         )

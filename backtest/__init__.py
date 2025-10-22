@@ -351,18 +351,18 @@ class Backtester(ABC):
         self.strategy.config.save(filepath=os.path.join(folder_path, 'strategy_config.pkl'))
         self.config.save(filepath=os.path.join(folder_path, 'backtester_config.pkl'))
 
-        # All positions
-        positions_folder_path = os.path.join(folder_path, 'positions')
-        os.makedirs(positions_folder_path, exist_ok=True)
-        for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
-            df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
+        # # All positions
+        # positions_folder_path = os.path.join(folder_path, 'positions')
+        # os.makedirs(positions_folder_path, exist_ok=True)
+        # for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
+        #     df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
 
-        # All actions
-        actions_folder = os.path.join(folder_path, 'actions')
-        os.makedirs(actions_folder, exist_ok=True)
-        # Position tally data
-        for hash, position_dict in self.strategy.position_tally.items():
-            position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
+        # # All actions
+        # actions_folder = os.path.join(folder_path, 'actions')
+        # os.makedirs(actions_folder, exist_ok=True)
+        # # Position tally data
+        # for hash, position_dict in self.strategy.position_tally.items():
+        #     position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
 
         # final portfolio metrics
         self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, 'df_portfolio_metrics.parquet'))  # Save portfolio metrics
@@ -381,21 +381,34 @@ class Backtester(ABC):
 
         print(f'Backtest results saved to {folder_path}\n')
 
-    def calculate_stoploss_levels(
+    def get_dataframe_with_stoploss_info(
         self,
         df: pd.DataFrame,
         starting_stoploss_level: float,
-        position_type: str = 'long',
+        trade_type: str = 'long',
         trail_stoploss: bool = False,
     ) -> pd.DataFrame:
+        """
+        Calculate stoploss levels over time for a given OHLC dataframe `df`. Note that the function trims the dataframe `df` to only include data up to the first stoploss hit, ie if stoploss is hit at timestamp T, all data after T is removed. It also adds a `price` column initially same as `close` for compatibility with df_position dataframes. The `price` column is set to stoploss price level at the last row `if` stoploss is hit.
+        Args:
+            df (pd.DataFrame): A DataFrame containing OHLC prices with columns ['open', 'close', 'high', 'low'] and a datetime index.
+            starting_stoploss_level (float): The initial stoploss price level.
+            trade_type (str): The type of position, either 'long' or 'short'.
+            trail_stoploss (bool): Whether to use a trailing stoploss mechanism.
+        Returns:
+            pd.DataFrame: A DataFrame with additional columns for stoploss levels and whether the stoploss was hit. The main columns are:
+                - 'stoploss_price_level': The calculated stoploss price level at each timestamp.
+                - 'stoploss_hit': A boolean indicating whether the stoploss was hit at each timestamp
+        """
+
         assert isinstance(starting_stoploss_level, (int, float)), 'starting_stoploss_level must be numeric'
-        assert position_type in ['long', 'short'], "position_type must be 'long' or 'short'"
+        assert trade_type in ['long', 'short'], "trade_type must be 'long' or 'short'"
         assert isinstance(trail_stoploss, bool), 'trail_stoploss must be a boolean'
         df = df.copy()  # Make a copy of df to avoid modifying the original dataframe
         df['stoploss_hit'] = False
 
         if trail_stoploss:
-            if position_type == 'long':
+            if trade_type == 'long':
                 df['highest_high_until_now'] = df['high'].cummax().shift(1)
                 df['shift_sl_up'] = df['high'] > df['highest_high_until_now']
                 df['sl_change'] = (df['high'] - df['highest_high_until_now']).where(df['shift_sl_up'], 0)
@@ -437,7 +450,7 @@ class Backtester(ABC):
 
         else:
             df['stoploss_price_level'] = starting_stoploss_level
-            if position_type == 'long':
+            if trade_type == 'long':
                 df.loc[df.index[1] :, 'stoploss_hit'] = df.loc[df.index[1] :, 'low'].round(6) <= df.loc[df.index[1] :, 'stoploss_price_level'].round(6)
             else:  # short
                 df.loc[df.index[1] :, 'stoploss_hit'] = df.loc[df.index[1] :, 'high'].round(6) >= df.loc[df.index[1] :, 'stoploss_price_level'].round(6)

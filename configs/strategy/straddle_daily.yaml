@@ -1,4 +1,4 @@
-name: weekly_straddle # Name of the strategy configuration
+name: straddle_daily # Name of the strategy configuration
 call_risk: inf # Risk for the call leg in a straddle (₹). The leg gets cut if this risk is breached.
 trail_call_risk: false # Whether to trail the stoploss risk for the call leg.
 put_risk: inf # Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.
@@ -7,3 +7,4 @@ long_or_short: short # Direction of the straddle position
 entry_time: "09:15:00" # Time to enter the straddle position
 exit_time: "15:20:00" # Time to exit the straddle position
 lot_size: 75 # The lot size for the single position
+margin_required: 260000 # The margin requirement for the short position (₹). ₹ 2.55L on 21/10/2024 [Sensibull] but NSE needs higher margin for expiry days.
