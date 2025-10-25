@@ -15,7 +15,6 @@ BACKTEST_RESULTS_FOLDERPATH1 = PROJECT_ROOT / 'backtest_results1'
 # External SSD path for backtest results
 SSD_BACKTEST_RESULTS_FOLDERPATH = Path("/Volumes/SanDiskSSD/backtest_results")
 
-
 # Nifty Specific Paths
 NIFTY_PARQUET_PATH = GLOBAL_DB_FOLDERPATH / 'indices' / 'NIFTY_50_1min.parquet'
 NIFTY_EXPIRIES_JSON_PATH = PROJECT_ROOT / 'datamanager' / 'metadata' / 'nse' / 'nifty_expiries.json'
