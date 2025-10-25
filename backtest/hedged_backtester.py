@@ -44,10 +44,10 @@ class HedgedBackTester(Backtester):
             entry_price = order_stats['price']
             risk_associated_in_capital = self.strategy.config.call_risk if order_stats['action'].option_type == 'CE' else self.strategy.config.put_risk
             risk_associated_in_points = risk_associated_in_capital / self.config.lot_size
-            initial_stoploss_level = entry_price - risk_associated_in_points if order_stats['trade_type'] == 'long' else entry_price + risk_associated_in_points
+            starting_stoploss_level_combined_position = entry_price - risk_associated_in_points if order_stats['trade_type'] == 'long' else entry_price + risk_associated_in_points
             df_stoploss = self.get_dataframe_with_stoploss_info(
                 df=df_option,
-                starting_stoploss_level=initial_stoploss_level,
+                starting_stoploss_level=starting_stoploss_level_combined_position,
                 trade_type=order_stats['trade_type'],
                 trail_stoploss=(order_stats['action'].order_type == 'market_stoploss_trail'),
             )
@@ -58,25 +58,25 @@ class HedgedBackTester(Backtester):
             entry_price = order_stats['price']
             risk_associated_in_capital = self.strategy.config.otm_call_risk if order_stats['action'].option_type == 'CE' else self.strategy.config.otm_put_risk
             risk_associated_in_points = risk_associated_in_capital / self.config.lot_size
-            initial_stoploss_level = entry_price - risk_associated_in_points if order_stats['trade_type'] == 'long' else entry_price + risk_associated_in_points
+            starting_stoploss_level_combined_position = entry_price - risk_associated_in_points if order_stats['trade_type'] == 'long' else entry_price + risk_associated_in_points
             df_stoploss = self.get_dataframe_with_stoploss_info(
                 df=df_option,
-                starting_stoploss_level=initial_stoploss_level,
+                starting_stoploss_level=starting_stoploss_level_combined_position,
                 trade_type=order_stats['trade_type'],
                 trail_stoploss=(order_stats['action'].order_type == 'market_stoploss_trail'),
             )
-        elif self.strategy.name == 'IronCondorDaily':
-            assert len(filled_orders) in (2, 4), 'IronCondorDaily should have 2 or 4 legs filled_orders to create df_stoploss for hedged backtester'
+        elif self.strategy.name in ('IronCondorDaily', 'IronButterflyDaily'):
+            assert len(filled_orders) in (2, 4), 'IronCondorDaily or IronButterflyDaily should have 2 or 4 legs filled_orders to create df_stoploss for hedged backtester'
             current_option_type = order_stats['action'].option_type
             actions_of_same_option_type = [fo['action'] for fo in filled_orders if fo['action'].option_type == current_option_type]
-            assert len(actions_of_same_option_type) == 2, 'There should be exactly 2 legs of same option type in IronCondorDaily'
+            assert len(actions_of_same_option_type) == 2, 'There should be exactly 2 legs of same option type in IronCondorDaily or IronButterflyDaily'
 
             filling_timestamps = [fo['timestamp'] for fo in filled_orders if fo['action'].option_type == current_option_type]
             assert all(ts == filling_timestamps[0] for ts in filling_timestamps), 'All legs of same option type should have same filling timestamp'
             assert entry_timestamp == filling_timestamps[0], 'entry_timestamp should match filling timestamp of legs of same option type'
 
             # Assert all filling_timestamps are the same for legs of same option type
-            max_possible_exit_timestamp = pd.Timestamp.combine(entry_timestamp.date(), self.strategy.config.exit_time)  # IronCondorDaily exits on the same day
+            max_possible_exit_timestamp = pd.Timestamp.combine(entry_timestamp.date(), self.strategy.config.exit_time)  # IronCondorDaily or IronButterflyDaily exits on the same day
             ohlc_dataframes_options, trade_types = [], []
             for action in actions_of_same_option_type:
                 df_option = self.dbconnector.get_option_df(option_type=action.option_type, strike=action.strike, expiry_date=action.expiry)[['open', 'high', 'low', 'close']]
@@ -87,24 +87,92 @@ class HedgedBackTester(Backtester):
             df_option_combined = generate_combined_ohlc_dataframe(ohlc_dataframes=ohlc_dataframes_options, trade_types=trade_types)
             risk_associated_in_capital = self.strategy.config.put_credit_spread_risk if current_option_type == 'PE' else self.strategy.config.call_credit_spread_risk
             risk_associated_in_points = risk_associated_in_capital / self.config.lot_size
+            combined_option_entry_price = 0
+            for fo in filled_orders:
+                if fo['action'].option_type == current_option_type:
+                    combined_option_entry_price += fo['price'] if fo['trade_type'] == 'long' else -fo['price']
+            combined_option_entry_price = round(combined_option_entry_price, 6)
+            starting_stoploss_level_combined_position = combined_option_entry_price - risk_associated_in_points
+            df_stoploss_combined_position = self.get_dataframe_with_stoploss_info(
+                df=df_option_combined,
+                starting_stoploss_level=starting_stoploss_level_combined_position,
+                trade_type='long',  # For the overall combined position of same option type , its  like we are long position
+                trail_stoploss=self.strategy.config.trail_call_credit_spread_risk if current_option_type == 'CE' else self.strategy.config.trail_put_credit_spread_risk,
+            )
+            df_current_option = self.dbconnector.get_option_df(
+                option_type=order_stats['action'].option_type,
+                strike=order_stats['action'].strike,
+                expiry_date=order_stats['action'].expiry,
+            )
+            df_current_option = df_current_option.loc[df_stoploss_combined_position.index].copy()  # Align df_current_option to df_option_combined's index
+            df_current_option['price'] = df_current_option['close']
+            df_current_option['stoploss_hit'] = df_stoploss_combined_position['stoploss_hit']
+            df_stoploss = df_current_option.copy()
 
-            import ipdb; ipdb.set_trace()
-            print('IronCondorDaily df_stoploss creation not implemented yet.')
-
-        elif self.strategy.name == 'StraddleWeekly':
-            max_possible_exit_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp)  # StraddleWeekly exits on the exit date mapped to the entry date
+        elif self.strategy.name in ('StraddleWeekly', 'StrangleWeekly'):
+            max_possible_exit_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp)
             df_option = df_option.loc[(df_option.index >= entry_timestamp) & (df_option.index <= max_possible_exit_timestamp)].copy()
             assert not df_option.empty, f'df_option is empty for order_stats : {order_stats}'
+
+            if self.strategy.name == 'StraddleWeekly':
+                risk_associated_in_capital = self.strategy.config.call_risk if order_stats['action'].option_type == 'CE' else self.strategy.config.put_risk
+            else:  # StrangleWeekly
+                risk_associated_in_capital = self.strategy.config.otm_call_risk if order_stats['action'].option_type == 'CE' else self.strategy.config.otm_put_risk
+
             entry_price = order_stats['price']
-            risk_associated_in_capital = self.strategy.config.call_risk if order_stats['action'].option_type == 'CE' else self.strategy.config.put_risk
             risk_associated_in_points = risk_associated_in_capital / self.config.lot_size
-            initial_stoploss_level = entry_price - risk_associated_in_points if order_stats['trade_type'] == 'long' else entry_price + risk_associated_in_points
+            starting_stoploss_level_combined_position = entry_price - risk_associated_in_points if order_stats['trade_type'] == 'long' else entry_price + risk_associated_in_points
             df_stoploss = self.get_dataframe_with_stoploss_info(
                 df=df_option,
-                starting_stoploss_level=initial_stoploss_level,
+                starting_stoploss_level=starting_stoploss_level_combined_position,
                 trade_type=order_stats['trade_type'],
                 trail_stoploss=(order_stats['action'].order_type == 'market_stoploss_trail'),
             )
+
+        elif self.strategy.name in ('IronCondorWeekly'):
+            assert len(filled_orders) in (2, 4), 'IronCondorWeekly should have 2 or 4 legs filled_orders to create df_stoploss for hedged backtester'
+            current_option_type = order_stats['action'].option_type
+            actions_of_same_option_type = [fo['action'] for fo in filled_orders if fo['action'].option_type == current_option_type]
+            assert len(actions_of_same_option_type) == 2, 'There should be exactly 2 legs of same option type in IronCondorWeekly'
+
+            filling_timestamps = [fo['timestamp'] for fo in filled_orders if fo['action'].option_type == current_option_type]
+            assert all(ts == filling_timestamps[0] for ts in filling_timestamps), 'All legs of same option type should have same filling timestamp'
+            assert entry_timestamp == filling_timestamps[0], 'entry_timestamp should match filling timestamp of legs of same option type'
+
+            # Assert all filling_timestamps are the same for legs of same option type
+            max_possible_exit_timestamp = self.strategy.entry_ts_to_exit_ts_map.get(self.strategy.latest_entry_timestamp)
+            ohlc_dataframes_options, trade_types = [], []
+            for action in actions_of_same_option_type:
+                df_option = self.dbconnector.get_option_df(option_type=action.option_type, strike=action.strike, expiry_date=action.expiry)[['open', 'high', 'low', 'close']]
+                df_option = df_option.loc[(df_option.index >= entry_timestamp) & (df_option.index <= max_possible_exit_timestamp)].copy()
+                assert not df_option.empty, f'df_option is empty for action : {action}'
+                ohlc_dataframes_options.append(df_option)
+                trade_types.append(action.trade_type)
+            df_option_combined = generate_combined_ohlc_dataframe(ohlc_dataframes=ohlc_dataframes_options, trade_types=trade_types)
+            risk_associated_in_capital = self.strategy.config.put_credit_spread_risk if current_option_type == 'PE' else self.strategy.config.call_credit_spread_risk
+            risk_associated_in_points = risk_associated_in_capital / self.config.lot_size
+            combined_option_entry_price = 0
+            for fo in filled_orders:
+                if fo['action'].option_type == current_option_type:
+                    combined_option_entry_price += fo['price'] if fo['trade_type'] == 'long' else -fo['price']
+            combined_option_entry_price = round(combined_option_entry_price, 6)
+            starting_stoploss_level_combined_position = combined_option_entry_price - risk_associated_in_points
+            df_stoploss_combined_position = self.get_dataframe_with_stoploss_info(
+                df=df_option_combined,
+                starting_stoploss_level=starting_stoploss_level_combined_position,
+                trade_type='long',  # For the overall combined position of same option type , its  like we are long position
+                trail_stoploss=self.strategy.config.trail_call_credit_spread_risk if current_option_type == 'CE' else self.strategy.config.trail_put_credit_spread_risk,
+            )
+            df_current_option = self.dbconnector.get_option_df(
+                option_type=order_stats['action'].option_type,
+                strike=order_stats['action'].strike,
+                expiry_date=order_stats['action'].expiry,
+            )
+            df_current_option = df_current_option.loc[df_stoploss_combined_position.index].copy()  # Align df_current_option to df_option_combined's index
+            df_current_option['price'] = df_current_option['close']
+            df_current_option['stoploss_hit'] = df_stoploss_combined_position['stoploss_hit']
+            df_stoploss = df_current_option.copy()
+
         else:
             raise NotImplementedError(f'max_possible_exit_timestamp for Strategy {self.strategy.name} not implemented in BaseBackTester')
 

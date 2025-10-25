@@ -1,4 +1,4 @@
-name: ironcondor_daily # Name of the strategy configuration
+name: ironcondor_weekly # Name of the strategy configuration
 long_or_short: short # Direction of the ironcondor position
 entry_time: "09:15:00" # Time to enter the ironcondor position
 exit_time: "15:20:00" # Time to exit the ironcondor position

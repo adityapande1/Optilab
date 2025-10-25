@@ -7,44 +7,8 @@ class StraddleWeekly(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)
         self.name = self.__class__.__name__
-        self.entry_ts_to_exit_ts_map = self._generate_entry_date_to_exit_date_map()
+        self.entry_ts_to_exit_ts_map = self.generate_entry_date_to_exit_date_map()
         self.latest_entry_timestamp = None
-
-    def _generate_entry_date_to_exit_date_map(self) -> dict[pd.Timestamp, pd.Timestamp]:
-        """
-        Generates a mapping of entry timestamps to exit timestamps based on weekly expiry dates.
-            - entry_date(key) is the first trading day after an expiry date.
-            - entry_ts is : pd.Timestamp(entry_date + self.config.entry_time)
-            - exit_date(value) is the next expiry date after the entry date, ie the closest expiry date of the entry week.
-            - exit_ts is : pd.Timestamp(exit_date + self.config.exit_time)
-        Returns:
-            dict[pd.Timestamp, pd.Timestamp]: A dictionary mapping entry timestamps to exit timestamps.
-        """
-        all_expiry_dates = sorted(self.dbconnector.get_all_available_expiry_dates())
-        df_spot = self.dbconnector.df_spot
-        entry_date_to_exit_date_map = {}  # Note: exit_date is also an expiry date
-
-        for expiry_date in all_expiry_dates:
-            next_date_after_expiry = pd.to_datetime(expiry_date) + pd.Timedelta(days=1)
-            next_date_after_expiry = next_date_after_expiry.strftime('%Y-%m-%d')
-            df_subset = df_spot[df_spot.index >= next_date_after_expiry]
-
-            if df_subset.empty:
-                continue  # skip if no data after expiry
-
-            entry_date = df_subset.index.min().date().strftime('%Y-%m-%d')
-            index_of_expiry = all_expiry_dates.index(expiry_date)
-            exit_date = all_expiry_dates[index_of_expiry + 1] if index_of_expiry + 1 < len(all_expiry_dates) else None
-
-            if exit_date:
-                entry_date_to_exit_date_map[entry_date] = exit_date
-
-        entry_ts_to_exit_ts_map = {
-            pd.Timestamp.combine(pd.to_datetime(entry_date), self.config.entry_time): pd.Timestamp.combine(pd.to_datetime(exit_date), self.config.exit_time)
-            for entry_date, exit_date in entry_date_to_exit_date_map.items()
-        }
-
-        return entry_ts_to_exit_ts_map
 
     def action(self, timestamp: pd.Timestamp) -> list[Action] | None:
         actions = None

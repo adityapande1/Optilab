@@ -1,0 +1,11 @@
+name: butterfly_daily # Name of the strategy configuration
+butterfly_option_type: CE # Option type for the butterfly strategy (CE for Call, PE for Put) ie the type of options used to form the butterfly (only one type is used for butterfly)
+long_or_short: long # Direction of the ironcondor position
+entry_time: "09:15:00" # Time to enter the ironcondor position
+exit_time: "15:20:00" # Time to exit the ironcondor position
+lot_size: 75 # The lot size for the single position
+wing_width: 100 # The width/spread between the strike if K1 < K2 < K3 then wing_width = | K2 - K1 | = | K3 - K2 | Must be a multiple of 50.
+credit_spread_risk: inf # Risk for the credit spread
+trail_credit_spread_risk: false # Whether to trail the credit spread risk
+debit_spread_risk: inf # Risk for the debit spread
+trail_debit_spread_risk: false # Whether to trail the debit spread risk

@@ -1,10 +1,9 @@
 from strategy import Strategy, Action
 from connectors.dbconnector import DBConnector
 import pandas as pd
-from utils.option_utils import get_lower_upper_strikes_around_spot
 
 
-class IronCondorDaily(Strategy):
+class IronButterflyDaily(Strategy):
     def __init__(self, config, dbconnector: DBConnector):
         super().__init__(config, dbconnector)
         self.name = self.__class__.__name__
@@ -12,10 +11,11 @@ class IronCondorDaily(Strategy):
     def action(self, timestamp: pd.Timestamp) -> list[Action] | None:
         actions = None
         if timestamp.time() == self.config.entry_time:
-            spot_price = self.dbconnector.df_spot.loc[timestamp, 'close']
+            atm_strike = self.dbconnector.get_ATM_strike(timestamp)
             closest_expiry = self.dbconnector.get_closest_expiry(timestamp)
-            inner_put_strike, inner_call_strike = get_lower_upper_strikes_around_spot(spot=spot_price, strike_interval=50, width=self.config.body_width)
+            inner_put_strike = atm_strike
             outer_put_strike = inner_put_strike - self.config.wing_width
+            inner_call_strike = atm_strike
             outer_call_strike = inner_call_strike + self.config.wing_width
 
             outer_put_action = Action(
@@ -67,37 +67,38 @@ class IronCondorDaily(Strategy):
         opposite_pos = 'short' if self.config.long_or_short == 'long' else 'long'
 
         if self.config.long_or_short == 'short':
-            about_str = f'Name : {self.name} : __/‾‾\\__ \n'
-            desc = 'Neutral strategy. Profits from low volatility. Profits when the market stays range-bound. TimeDecay on our side. Risk : limited.'
+            about_str = f'Name : {self.name} : __/\\__ \n'
+            desc = 'Neutral strategy centered at ATM. Profits from low volatility when price remains near strike center. TimeDecay works in our favor. Risk : limited. Reward : limited.'
         elif self.config.long_or_short == 'long':
-            about_str = f'Name : {self.name} : ‾‾\\__/‾‾ \n'
-            desc = 'Needs large price movements (in either direction) to be profitable. Profits from high volatility. TimeDecay against us. Risk : limited.'
+            about_str = f'Name : {self.name} : ‾‾\\/‾‾ \n'
+            desc = 'Directional volatility strategy. Profits from large price moves in either direction. TimeDecay works against us. Risk : limited. Reward : limited.'
 
         about_str += f'\nDescription : {desc}\n'
         about_str += f'Net Position : {self.config.long_or_short.upper()}\n\n'
 
         about_str += (
-            f'Body Width Definition: INNER CALL STRIKE - INNER PUT STRIKE → {self.config.body_width} points.\n'
-            f'Wing Width Definition: (Outer - Inner) distance for each side (Call/Put) → {self.config.wing_width} points.\n'
-            f'The inner strikes (OTM CALL & OTM PUT) define the body, and the outer strikes define the wings.\n'
-            f'The midpoint of the body is chosen as close to Spot as possible.\n\n'
+            f'Wing Width Definition: Distance between ATM strike and each outer strike → {self.config.wing_width} points.\n'
+            f'The ATM strike serves as the center (body) of the Iron Butterfly.\n'
+            f'Outer strikes (on both CALL and PUT sides) define the wings at equal distance from ATM.\n'
+            f'The strategy is symmetrical around the ATM strike.\n\n'
         )
 
         about_str += 'POSITION DETAILS:\n'
         about_str += f'     | {"LEG":<25} | {"POSITION":<15} | {"STRIKE":<20} | {"STOPLOSS":<15} | {"TRAIL STOPLOSS":<15} |\n'
-        about_str += f'     | {"Outer PUT (hedge)":<25} | {opposite_pos:<15} | {"Inner OTM PUT - " + str(self.config.wing_width):<20} | {self.config.put_credit_spread_risk:<15} | {str(self.config.trail_put_credit_spread_risk):<15} |\n'
-        about_str += f'     | {"Inner PUT (credit leg)":<25} | {self.config.long_or_short:<15} | {"Inner OTM PUT":<20} | {self.config.put_credit_spread_risk:<15} | {str(self.config.trail_put_credit_spread_risk):<15} |\n'
-        about_str += f'     | {"Inner CALL (credit leg)":<25} | {self.config.long_or_short:<15} | {"Inner OTM CALL":<20} | {self.config.call_credit_spread_risk:<15} | {str(self.config.trail_call_credit_spread_risk):<15} |\n'
-        about_str += f'     | {"Outer CALL (hedge)":<25} | {opposite_pos:<15} | {"Inner OTM CALL + " + str(self.config.wing_width):<20} | {self.config.call_credit_spread_risk:<15} | {str(self.config.trail_call_credit_spread_risk):<15} |\n\n'
+        about_str += f'     | {"Outer PUT (hedge)":<25} | {opposite_pos:<15} | {"ATM PUT - " + str(self.config.wing_width):<20} | {self.config.put_credit_spread_risk:<15} | {str(self.config.trail_put_credit_spread_risk):<15} |\n'
+        about_str += f'     | {"ATM PUT (credit leg)":<25} | {self.config.long_or_short:<15} | {"ATM PUT":<20} | {self.config.put_credit_spread_risk:<15} | {str(self.config.trail_put_credit_spread_risk):<15} |\n'
+        about_str += f'     | {"ATM CALL (credit leg)":<25} | {self.config.long_or_short:<15} | {"ATM CALL":<20} | {self.config.call_credit_spread_risk:<15} | {str(self.config.trail_call_credit_spread_risk):<15} |\n'
+        about_str += f'     | {"Outer CALL (hedge)":<25} | {opposite_pos:<15} | {"ATM CALL + " + str(self.config.wing_width):<20} | {self.config.call_credit_spread_risk:<15} | {str(self.config.trail_call_credit_spread_risk):<15} |\n\n'
 
         about_str += (
             'NOTE:\n'
-            '  • PUT Credit Spread and CALL Credit Spread are traded and trailed together.\n'
-            '  • Both Call/Put Legs are exited at the same time when either of the spreads hit their respective stoploss levels.\n\n'
+            '  • PUT and CALL Credit Spreads are entered together forming a symmetrical Iron Butterfly.\n'
+            '  • Both spreads are monitored and call/put legs exited together when either side hits its respective stoploss.\n'
+            '  • The position is entered around ATM, ensuring equal distance on both wings.\n\n'
         )
 
-        about_str += f'Enter an Iron Condor each day with nearest OTM options at {self.config.entry_time.strftime("%H:%M:%S")}.\n'
-        about_str += f'Exit all positions at {self.config.exit_time.strftime("%H:%M:%S")} , if stoploss not hit.\n\n'
+        about_str += f'Enter an Iron Butterfly each day at {self.config.entry_time.strftime("%H:%M:%S")} using nearest ATM options.\n'
+        about_str += f'Exit all positions at {self.config.exit_time.strftime("%H:%M:%S")} if stoploss not triggered.\n\n'
 
         about_str += 'EXIT RULES:\n'
         about_str += f'     1. EXIT : If time is {self.config.exit_time.strftime("%H:%M:%S")}.\n'

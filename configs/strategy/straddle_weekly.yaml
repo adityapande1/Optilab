@@ -7,4 +7,3 @@ call_risk: inf # Risk for the call leg in a straddle (₹). The leg gets cut if 
 trail_call_risk: false # Whether to trail the stoploss risk for the call leg.
 put_risk: inf # Risk for the put leg in a straddle (₹). The leg gets cut if this risk is breached.
 trail_put_risk: false # Whether to trail the stoploss risk for the put leg.
-margin_required: 260000 # The margin requirement for the short position (₹). ₹ 2.58L on 21/10/2024 [Sensibull] but NSE needs higher margin for expiry days.

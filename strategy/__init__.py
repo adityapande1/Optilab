@@ -225,10 +225,47 @@ class Strategy(ABC):
                 assert position_to_remove, f'INVALID SQUARE-OFF. A filled position does not exist in {self.position}.'
                 self.position_tally[order_stats['action'].square_off_id]['closed'] = order_stats
                 self.position.remove(position_to_remove)
-                
+
             # 2. Else, simply add to self.position
             else:
                 self.position.append(order_stats)
                 self.position_tally[order_stats['hash']] = {}
                 self.position_tally[order_stats['hash']]['opened'] = order_stats
                 self.position_tally[order_stats['hash']]['closed'] = None
+
+    # Helper method to generate entry to exit date map : Applicable for weekly strategies
+    def generate_entry_date_to_exit_date_map(self) -> dict[pd.Timestamp, pd.Timestamp]:
+        """
+        Generates a mapping of entry timestamps to exit timestamps based on weekly expiry dates.
+            - entry_date(key) is the first trading day after an expiry date.
+            - entry_ts is : pd.Timestamp(entry_date + self.config.entry_time)
+            - exit_date(value) is the next expiry date after the entry date, ie the closest expiry date of the entry week.
+            - exit_ts is : pd.Timestamp(exit_date + self.config.exit_time)
+        Returns:
+            dict[pd.Timestamp, pd.Timestamp]: A dictionary mapping entry timestamps to exit timestamps.
+        """
+        all_expiry_dates = sorted(self.dbconnector.get_all_available_expiry_dates())
+        df_spot = self.dbconnector.df_spot
+        entry_date_to_exit_date_map = {}  # Note: exit_date is also an expiry date
+
+        for expiry_date in all_expiry_dates:
+            next_date_after_expiry = pd.to_datetime(expiry_date) + pd.Timedelta(days=1)
+            next_date_after_expiry = next_date_after_expiry.strftime('%Y-%m-%d')
+            df_subset = df_spot[df_spot.index >= next_date_after_expiry]
+
+            if df_subset.empty:
+                continue  # skip if no data after expiry
+
+            entry_date = df_subset.index.min().date().strftime('%Y-%m-%d')
+            index_of_expiry = all_expiry_dates.index(expiry_date)
+            exit_date = all_expiry_dates[index_of_expiry + 1] if index_of_expiry + 1 < len(all_expiry_dates) else None
+
+            if exit_date:
+                entry_date_to_exit_date_map[entry_date] = exit_date
+
+        entry_ts_to_exit_ts_map = {
+            pd.Timestamp.combine(pd.to_datetime(entry_date), self.config.entry_time): pd.Timestamp.combine(pd.to_datetime(exit_date), self.config.exit_time)
+            for entry_date, exit_date in entry_date_to_exit_date_map.items()
+        }
+
+        return entry_ts_to_exit_ts_map
