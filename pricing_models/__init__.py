@@ -280,7 +280,7 @@ class OptionPricingModel(ABC):
         df_to_feed_model['option_type'] = option_type
         df_to_feed_model['market_price'] = df_option['close']
         df_to_feed_model['strike'] = strike
-        df_to_feed_model['expiry_timestamp'] = pd.to_datetime(expiry_date) + pd.Timedelta(hours=15, minutes=30)
+        df_to_feed_model['expiry_timestamp'] = pd.Timestamp.combine(pd.to_datetime(expiry_date).date(), pd.Timestamp('15:29:00').time())
         df_to_feed_model['current_timestamp'] = df_option.index
         spot_vals = db_connector.df_spot.loc[df_option.index, 'close']
         df_to_feed_model['spot'] = spot_vals
