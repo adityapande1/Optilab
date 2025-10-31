@@ -351,18 +351,18 @@ class Backtester(ABC):
         self.strategy.config.save(filepath=os.path.join(folder_path, 'strategy_config.pkl'))
         self.config.save(filepath=os.path.join(folder_path, 'backtester_config.pkl'))
 
-        # # All positions
-        # positions_folder_path = os.path.join(folder_path, 'positions')
-        # os.makedirs(positions_folder_path, exist_ok=True)
-        # for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
-        #     df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
+        # All positions
+        positions_folder_path = os.path.join(folder_path, 'positions')
+        os.makedirs(positions_folder_path, exist_ok=True)
+        for hash, df_position in self.orderhash_to_dfposition_map.items():  # Save df_position
+            df_position.to_parquet(os.path.join(positions_folder_path, f'df_position_{hash}.parquet'))
 
         # # All actions
-        # actions_folder = os.path.join(folder_path, 'actions')
-        # os.makedirs(actions_folder, exist_ok=True)
-        # # Position tally data
-        # for hash, position_dict in self.strategy.position_tally.items():
-        #     position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
+        actions_folder = os.path.join(folder_path, 'actions')
+        os.makedirs(actions_folder, exist_ok=True)
+        # Position tally data
+        for hash, position_dict in self.strategy.position_tally.items():
+            position_dict['opened']['action'].save(savedir=actions_folder, filename=f'action_{hash}.json')
 
         # final portfolio metrics
         self.df_portfolio_metrics.to_parquet(os.path.join(folder_path, 'df_portfolio_metrics.parquet'))  # Save portfolio metrics
