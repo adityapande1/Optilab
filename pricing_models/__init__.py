@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict
 import pandas as pd
 import swifter
-
 swifter.set_defaults(progress_bar=False)
-
+from connectors.dbconnector import DBConnector
+import numpy as np
 
 class OptionPricingModel(ABC):
     def __init__(self):
@@ -253,3 +253,40 @@ class OptionPricingModel(ABC):
         df_results = pd.DataFrame(results, index=df.index)
         df_results = df_results.round(6)
         return df_results
+
+    def get_option_df_with_greeks(self, db_connector: DBConnector, option_type, strike, expiry_date, ticker='NIFTY', drop_duplicate_indices=True, num_past_bars_volatility=50) -> pd.DataFrame:
+
+
+        def _add_annualized_volatility(df, num_past_bars):
+            # 1. Compute log returns
+            df['log_return'] = np.log(df['close'] / df['close'].shift(1))
+            df['log_return'].fillna(0, inplace=True)
+
+            # 2. Rolling std with min_periods=1
+            rolling_std = df['log_return'].rolling(window=num_past_bars, min_periods=1).std()
+
+            # 3. Annualize
+            annual_factor = np.sqrt(375 * 252)
+            df['volatility'] = rolling_std * annual_factor
+
+            # 4. Drop intermediate column
+            df.drop(columns='log_return', inplace=True)
+
+
+
+        df_option = db_connector.get_option_df(option_type=option_type, strike=strike, expiry_date=expiry_date, ticker=ticker, drop_duplicate_indices=drop_duplicate_indices)
+
+        df_to_feed_model = pd.DataFrame(index=df_option.index)
+        df_to_feed_model['option_type'] = option_type
+        df_to_feed_model['market_price'] = df_option['close']
+        df_to_feed_model['strike'] = strike
+        df_to_feed_model['expiry_timestamp'] = pd.to_datetime(expiry_date) + pd.Timedelta(hours=15, minutes=30)
+        df_to_feed_model['current_timestamp'] = df_option.index
+        spot_vals = db_connector.df_spot.loc[df_option.index, 'close']
+        df_to_feed_model['spot'] = spot_vals
+        _add_annualized_volatility(df_to_feed_model, num_past_bars_volatility)
+        df_to_feed_model['volatility'] = df_option['volatility']
+
+        df_with_greeks = self.get_model_output_dataframe(df_to_feed_model)
+        df_final = pd.concat([df_option, df_with_greeks], axis=1)
+        return df_final
