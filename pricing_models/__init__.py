@@ -223,6 +223,7 @@ class OptionPricingModel(ABC):
 
         greeks_and_iv = {
             'theoretical_price': self.get_option_price(option_type, spot, strike, expiry_timestamp, current_timestamp, volatility, risk_free_rate),
+            'volatility': volatility,
             'delta': self.get_delta(option_type, spot, strike, expiry_timestamp, current_timestamp, volatility, risk_free_rate),
             'gamma': self.get_gamma(option_type, spot, strike, expiry_timestamp, current_timestamp, volatility, risk_free_rate),
             'theta': self.get_theta(option_type, spot, strike, expiry_timestamp, current_timestamp, volatility, risk_free_rate),
@@ -257,6 +258,7 @@ class OptionPricingModel(ABC):
 
         results = {
             'theoretical_price': self.get_option_prices_vectorized(df),
+            'volatility': df['volatility'],
             'delta': self.get_deltas_vectorized(df),
             'gamma': self.get_gammas_vectorized(df),
             'theta': self.get_thetas_vectorized(df),
