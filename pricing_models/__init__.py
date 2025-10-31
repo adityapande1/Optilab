@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict
 import pandas as pd
 import swifter
+
 swifter.set_defaults(progress_bar=False)
 
 
@@ -11,55 +12,53 @@ class OptionPricingModel(ABC):
 
     # ---------- ABSTRACT METHODS ----------
     @abstractmethod
-    def get_option_price(self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp,
-                         current_timestamp: pd.Timestamp, volatility: float,
-                         risk_free_rate: Optional[float] = None) -> float:
+    def get_option_price(
+        self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, volatility: float, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     @abstractmethod
-    def get_iv(self, market_price: float, option_type: str, spot: float, strike: float,
-               expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp,
-               risk_free_rate: Optional[float] = None) -> float:
+    def get_iv(
+        self, market_price: float, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     @abstractmethod
-    def get_delta(self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp,
-                  current_timestamp: pd.Timestamp, volatility: float,
-                  risk_free_rate: Optional[float] = None) -> float:
+    def get_delta(
+        self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, volatility: float, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     @abstractmethod
-    def get_gamma(self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp,
-                  current_timestamp: pd.Timestamp, volatility: float,
-                  risk_free_rate: Optional[float] = None) -> float:
+    def get_gamma(
+        self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, volatility: float, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     @abstractmethod
-    def get_theta(self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp,
-                  current_timestamp: pd.Timestamp, volatility: float,
-                  risk_free_rate: Optional[float] = None) -> float:
+    def get_theta(
+        self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, volatility: float, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     @abstractmethod
-    def get_vega(self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp,
-                 current_timestamp: pd.Timestamp, volatility: float,
-                 risk_free_rate: Optional[float] = None) -> float:
+    def get_vega(
+        self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, volatility: float, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     @abstractmethod
-    def get_rho(self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp,
-                current_timestamp: pd.Timestamp, volatility: float,
-                risk_free_rate: Optional[float] = None) -> float:
+    def get_rho(
+        self, option_type: str, spot: float, strike: float, expiry_timestamp: pd.Timestamp, current_timestamp: pd.Timestamp, volatility: float, risk_free_rate: Optional[float] = None
+    ) -> float:
         pass
 
     # ---------- VECTORIZED VERSIONS ----------
 
     def get_option_prices_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for option price calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for option price calculation'
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_option_price(
                 option_type=row['option_type'],
                 spot=row['spot'],
@@ -67,19 +66,17 @@ class OptionPricingModel(ABC):
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
                 volatility=row['volatility'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
 
     def get_ivs_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['market_price', 'option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp']), \
+        assert all(col in df.columns for col in ['market_price', 'option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp']), (
             'Missing required columns for implied volatility calculation'
+        )
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_iv(
                 market_price=row['market_price'],
                 option_type=row['option_type'],
@@ -87,19 +84,15 @@ class OptionPricingModel(ABC):
                 strike=row['strike'],
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
 
     def get_deltas_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for delta calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for delta calculation'
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_delta(
                 option_type=row['option_type'],
                 spot=row['spot'],
@@ -107,19 +100,15 @@ class OptionPricingModel(ABC):
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
                 volatility=row['volatility'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
 
     def get_gammas_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for gamma calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for gamma calculation'
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_gamma(
                 option_type=row['option_type'],
                 spot=row['spot'],
@@ -127,19 +116,15 @@ class OptionPricingModel(ABC):
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
                 volatility=row['volatility'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
 
     def get_thetas_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for theta calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for theta calculation'
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_theta(
                 option_type=row['option_type'],
                 spot=row['spot'],
@@ -147,19 +132,15 @@ class OptionPricingModel(ABC):
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
                 volatility=row['volatility'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
 
     def get_vegas_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for vega calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for vega calculation'
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_vega(
                 option_type=row['option_type'],
                 spot=row['spot'],
@@ -167,19 +148,15 @@ class OptionPricingModel(ABC):
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
                 volatility=row['volatility'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
 
     def get_rhos_vectorized(self, df: pd.DataFrame):
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for rho calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for rho calculation'
 
-        return df.swifter.apply(
+        return df.swifter.progress_bar(False).apply(
             lambda row: self.get_rho(
                 option_type=row['option_type'],
                 spot=row['spot'],
@@ -187,9 +164,7 @@ class OptionPricingModel(ABC):
                 expiry_timestamp=row['expiry_timestamp'],
                 current_timestamp=row['current_timestamp'],
                 volatility=row['volatility'],
-                risk_free_rate=(row['risk_free_rate']
-                                if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate'])
-                                else self.DEFAULT_RISK_FREE_RATE),
+                risk_free_rate=(row['risk_free_rate'] if 'risk_free_rate' in df.columns and pd.notnull(row['risk_free_rate']) else self.DEFAULT_RISK_FREE_RATE),
             ),
             axis=1,
         )
@@ -252,9 +227,7 @@ class OptionPricingModel(ABC):
         return greeks_and_iv
 
     def get_model_output_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        assert all(col in df.columns for col in
-                   ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), \
-            'Missing required columns for model output calculation'
+        assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for model output calculation'
 
         results = {
             'theoretical_price': self.get_option_prices_vectorized(df),
