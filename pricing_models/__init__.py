@@ -76,7 +76,7 @@ class OptionPricingModel(ABC):
             'Missing required columns for implied volatility calculation'
         )
 
-        return df.swifter.progress_bar(False).apply(
+        iv_series = df.swifter.progress_bar(False).apply(
             lambda row: self.get_iv(
                 market_price=row['market_price'],
                 option_type=row['option_type'],
@@ -88,6 +88,8 @@ class OptionPricingModel(ABC):
             ),
             axis=1,
         )
+
+        return iv_series.ffill().bfill()
 
     def get_deltas_vectorized(self, df: pd.DataFrame):
         assert all(col in df.columns for col in ['option_type', 'spot', 'strike', 'expiry_timestamp', 'current_timestamp', 'volatility']), 'Missing required columns for delta calculation'
