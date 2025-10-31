@@ -288,10 +288,10 @@ class OptionPricingModel(ABC):
         df_to_feed_model['expiry_timestamp'] = pd.Timestamp.combine(pd.to_datetime(expiry_date).date(), pd.Timestamp('15:30:00').time())
         df_to_feed_model['current_timestamp'] = df_option.index
         df_spot = db_connector.df_spot.loc[df_option.index]
-        spot_vals = df_spot['close'].values
-        df_to_feed_model['spot'] = spot_vals
+        df_to_feed_model['spot'] = df_spot['close']
         _add_annualized_volatility(df_spot, num_past_bars_volatility)
-        df_to_feed_model['volatility'] = df_spot['volatility'].values
+        df_to_feed_model['volatility'] = df_spot['volatility']
         df_with_greeks = self.get_model_output_dataframe(df_to_feed_model)
         df_final = pd.concat([df_option, df_with_greeks], axis=1)
-        return df_final
+
+        return df_final.round(6)
