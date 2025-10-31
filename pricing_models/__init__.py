@@ -292,6 +292,6 @@ class OptionPricingModel(ABC):
         _add_annualized_volatility(df_option, num_past_bars_volatility)
         df_to_feed_model['volatility'] = df_option['volatility']
 
-        # df_with_greeks = self.get_model_output_dataframe(df_to_feed_model)
-        # df_final = pd.concat([df_option, df_with_greeks], axis=1)
-        return df_to_feed_model
+        df_with_greeks = self.get_model_output_dataframe(df_to_feed_model)
+        df_final = pd.concat([df_option, df_with_greeks], axis=1)
+        return df_final
