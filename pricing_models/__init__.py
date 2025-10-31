@@ -269,6 +269,8 @@ class OptionPricingModel(ABC):
             annual_factor = np.sqrt(375 * 252)
             df['volatility'] = rolling_std * annual_factor
             df['volatility'].fillna(method='bfill', inplace=True)
+            # handle 0 values for volatility
+            df['volatility'].replace(0, 1e-6, inplace=True)
 
             # 4. Drop intermediate column
             df.drop(columns='log_return', inplace=True)
