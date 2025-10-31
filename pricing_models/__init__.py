@@ -284,7 +284,7 @@ class OptionPricingModel(ABC):
         df_to_feed_model['current_timestamp'] = df_option.index
         spot_vals = db_connector.df_spot.loc[df_option.index, 'close']
         df_to_feed_model['spot'] = spot_vals
-        _add_annualized_volatility(df_to_feed_model, num_past_bars_volatility)
+        _add_annualized_volatility(df_option, num_past_bars_volatility)
         df_to_feed_model['volatility'] = df_option['volatility']
 
         df_with_greeks = self.get_model_output_dataframe(df_to_feed_model)
