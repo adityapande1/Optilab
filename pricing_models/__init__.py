@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Optional, Dict
 import pandas as pd
 import swifter
+swifter.set_defaults(progress_bar=False)
+
 
 class OptionPricingModel(ABC):
     def __init__(self):
