@@ -438,8 +438,6 @@ class IronButterflyDailyConfig(BaseConfig):
     def get_name(cls):
         return 'ironbutterfly_daily'
 
-
-
 class ButterflyDailyConfig(BaseConfig):
     name: str
     butterfly_option_type: Literal['CE', 'PE']  # Either 'CE' or 'PE'
@@ -480,8 +478,6 @@ class ButterflyDailyConfig(BaseConfig):
     @classmethod
     def get_name(cls):
         return 'butterfly_daily'
-
-
 
 ###############################################################
 ###############################################################
